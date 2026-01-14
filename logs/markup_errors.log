@@ -1,0 +1,14 @@
+ERROR	D	62	60	closing '+' without matching '#'	aller t+suo+gende wâz unt ſmach
+ERROR	D	62	60	unbalanced markup: number of '#' and '+' does not match	aller t+suo+gende wâz unt ſmach
+ERROR	D	63	61	closing '+' without matching '#'	flivzet uz diner ſc+zh+ozze
+ERROR	D	63	61	unbalanced markup: number of '#' and '+' does not match	flivzet uz diner ſc+zh+ozze
+ERROR	D	64	62	closing '+' without matching '#'	nu bedenche fr+sov+e g#aro+zze
+ERROR	D	64	62	unbalanced markup: number of '#' and '+' does not match	nu bedenche fr+sov+e g#aro+zze
+ERROR	A	131	126	nested markup detected	swaz #rMath#aeu+s+ d#aer+ frone bot
+ERROR	A	131	126	nested markup detected	swaz #rMath#aeu+s+ d#aer+ frone bot
+ERROR	A	131	126	nested markup detected	swaz #rMath#aeu+s+ d#aer+ frone bot
+ERROR	A	131	126	nested markup detected	swaz #rMath#aeu+s+ d#aer+ frone bot
+ERROR	A	213	178	nested markup detected	#rMath#aeu+s+ m#svo+z ez rechen
+ERROR	A	213	178	nested markup detected	#rMath#aeu+s+ m#svo+z ez rechen
+ERROR	A	213	178	nested markup detected	#rMath#aeu+s+ m#svo+z ez rechen
+ERROR	A	213	178	nested markup detected	#rMath#aeu+s+ m#svo+z ez rechen

@@ -1,16 +1,46 @@
 from pathlib import Path
 import re
+import logging
 from copy import deepcopy
 import csv
 from lxml import etree
 
-out_dir = "../tei"
-template_path = "../templates/tei_template.xml"
+
+OUT_DIR = "../tei"
+TEMPLATE_PATH = "../templates/tei_template.xml"
 NS = {
     "tei": "http://www.tei-c.org/ns/1.0",
     "xml": "http://www.w3.org/XML/1998/namespace",
 }
+LOG_FILE = "../logs/markup_errors.log"
+CSV_PATH = "../testdata/Probeseiten_Wernher.csv"
 
+## utils
+
+def clear_tei_folder():
+    out_dir_resolved = resolve_path_relative_to_script(OUT_DIR)
+    for file in out_dir_resolved.glob("*.xml"):
+        file.unlink()
+
+def resolve_path_relative_to_script(file_path: str) -> Path:
+    # check if path is absolute
+    if Path(file_path).is_absolute():
+        return Path(file_path)
+    # else resolve relative to this script's directory
+    script_dir = Path(__file__).resolve().parent
+    return script_dir / file_path
+
+def log_markup_issue(log_path: Path, witness_siglum: str, verse: "Vers", message: str):
+    logging.error(
+        "%s\t%s\t%s\t%s\t%s",
+        witness_siglum,
+        verse.global_count,
+        verse.local_count,
+        message,
+        verse.text_str,
+    )
+
+## TEI element creation helpers
 def tei(tag, attributes=None):
     elem = etree.Element(f"{{{NS['tei']}}}{tag}")
     if attributes:
@@ -20,6 +50,9 @@ def tei(tag, attributes=None):
 
 def tei_sub(parent, tag):
     return etree.SubElement(parent, f"{{{NS['tei']}}}{tag}")
+
+
+### Markup resolution
 
 class MarkupResolver:
     tagchars = ["s", "a", "d", "z", "l", "r", "f", "?"]
@@ -46,22 +79,36 @@ class MarkupResolver:
             return MarkupResolver.find_nested_markup(markup_str)
         return False
     
+    @staticmethod
     def find_nested_markup(markup_str: str):
         depth = 0
-        max_depth = 1
-        i = 0
-        while i < len(markup_str):
-            if markup_str[i] == "#":
+        max_depth = 0
+        for ch in markup_str:
+            if ch == "#":
                 depth += 1
                 max_depth = max(max_depth, depth)
-                i += 2
-            elif markup_str[i] == "+":
+            elif ch == "+":
+                depth = max(depth - 1, 0)
+        # nested markup (depth > 1) is not an error for parsing, so we just
+        # report whether there was any nesting at all.
+        return max_depth > 1
+
+    @staticmethod
+    def analyze_markup(markup_str: str):
+        errors: list[str] = []
+        depth = 0
+        for ch in markup_str:
+            if depth > 1:
+                errors.append("nested markup detected")
+            if ch == "#":
+                depth += 1
+            elif ch == "+":
+                if depth == 0:
+                    errors.append("closing '+' without matching '#'")
                 depth -= 1
-                i += 1
-            else:
-                i += 1
-        if depth > max_depth:
-            input(f"markup is nested to depth {max_depth} in string:\n{markup_str}\n")
+        if depth != 0:
+            errors.append("unbalanced markup: number of '#' and '+' does not match")
+        return errors
     
     @staticmethod
     def get_element_from_tag(tag: str):
@@ -109,8 +156,6 @@ class MarkupResolver:
                         last_elem.tail = (last_elem.tail or "") + char
                 else:
                     current_elem.text = (current_elem.text or "") + char
-        
-        
 
 class Vers:
     vers_prefix = "v"
@@ -142,7 +187,7 @@ class Witness:
         self.body = None
         self.container = None
         self.local_verses = 0
-        self.load_template(template_path)
+        self.load_template()
         self.global_verse_count = 0
 
     def make_linegroup(self):
@@ -151,6 +196,10 @@ class Witness:
     
     def parse_verses(self):
         for verse in self.verses:
+            # analyze markup and route any problems to the logger
+            errors = MarkupResolver.analyze_markup(verse.text_str)
+            for err in errors:
+                log_markup_issue(Path(LOG_FILE), self.siglum, verse, err)
             vers_elem = verse.to_tei()
             self.container.append(vers_elem)
             
@@ -168,8 +217,8 @@ class Witness:
         )
         self.verses.append(vers)
         
-    def load_template(self, template_path: str):
-        resolved_path = resolve_path_relative_to_script(template_path)
+    def load_template(self):
+        resolved_path = resolve_path_relative_to_script(TEMPLATE_PATH)
         with open(resolved_path, "r", encoding="utf-8") as file:
             self.tree = etree.parse(file)
         self.template = deepcopy(self.tree)
@@ -182,7 +231,7 @@ class Witness:
         if self.file_path:
             return
         file_name = f"{self.siglum}.xml"
-        out_dir_resolved = resolve_path_relative_to_script(out_dir)
+        out_dir_resolved = resolve_path_relative_to_script(OUT_DIR)
         self.file_path = out_dir_resolved / file_name
         return self.file_path
 
@@ -194,23 +243,7 @@ class Witness:
                 pretty_print=True
             )
 
-
-def resolve_path_relative_to_script(file_path: str) -> Path:
-    # check if path is absolute
-    if Path(file_path).is_absolute():
-        return Path(file_path)
-    # else resolve relative to this script's directory
-    script_dir = Path(__file__).resolve().parent
-    return script_dir / file_path
-
-
-# open an xml file, if none is provided open the one in ./templates/tei_template.xml
-def get_tei_template(file_path: str):
-    resolved_path = resolve_path_relative_to_script(file_path)
-    with open(resolved_path, "r", encoding="utf-8") as file:
-        tree = etree.parse(file)
-    return deepcopy(tree)
-
+## Main functions
 
 def witnesses_from_csv(file_path: str):
     resolved_path = resolve_path_relative_to_script(file_path)
@@ -219,33 +252,33 @@ def witnesses_from_csv(file_path: str):
     witnesses: dict[str, Witness] = {}
     with open(resolved_path, "r", encoding="utf-8") as csvfile:
         reader = csv.DictReader(csvfile)
-        for siglum in reader.fieldnames:
+        # gonna ignore the first colum (mastercounter)
+        sigla = reader.fieldnames[1:]
+        for siglum in sigla:
             witnesses[siglum] = Witness(siglum)
         for row in reader:
-            for siglum, vers_str in row.items():
+            for siglum in sigla:
+                vers_str = row[siglum]
                 witnesses[siglum].append_vers_str(vers_str)
     return witnesses
 
 
 def csv_to_tei(csv_file_path: str):
+    clear_tei_folder()
     witnesses = witnesses_from_csv(csv_file_path)
+    # configure logging to write a fresh log file on each run
+    logging.basicConfig(
+        filename=str(resolve_path_relative_to_script(LOG_FILE)),
+        filemode="w",  # overwrite on each run
+        level=logging.INFO,
+        format="%(levelname)s\t%(message)s",
+        encoding="utf-8",
+    )
     for witness in witnesses.values():
         witness.parse_verses()
         witness.set_filename()
         witness.save_to_file()
-        
 
-
-def test(csv_file_path: str):
-    witnesses = witnesses_from_csv(csv_file_path)
-    for witness in witnesses.values():
-        print(f"Witness: {witness.siglum}")
-        for verse in witness.verses:
-            print(f"  Verse {verse.local_count} (global {verse.global_count}): '{verse.text_str}'")
-            if MarkupResolver.find_unclosed_markup(verse.text_str):
-                input("Warning: Unclosed markup detected!")
-                
 
 if __name__ == "__main__":
-    csv_to_tei("../testdata/Probeseiten_Wernher.csv")
-    test("../testdata/Probeseiten_Wernher.csv")
+    csv_to_tei(CSV_PATH)
