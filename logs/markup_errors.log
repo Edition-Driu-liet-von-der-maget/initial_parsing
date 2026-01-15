@@ -1,9 +1,16 @@
 ERROR	D	62	60	closing '+' without matching '#'	aller t+suo+gende wâz unt ſmach
 ERROR	D	62	60	unbalanced markup: number of '#' and '+' does not match	aller t+suo+gende wâz unt ſmach
-ERROR	D	63	61	closing '+' without matching '#'	flivzet uz diner ſc+zh+ozze
-ERROR	D	63	61	unbalanced markup: number of '#' and '+' does not match	flivzet uz diner ſc+zh+ozze
-ERROR	D	64	62	closing '+' without matching '#'	nu bedenche fr+sov+e g#aro+zze
-ERROR	D	64	62	unbalanced markup: number of '#' and '+' does not match	nu bedenche fr+sov+e g#aro+zze
+ERROR	D	534	474	nested markup detected	daz ioach#aim #lde+r ir man genant
+ERROR	D	534	474	nested markup detected	daz ioach#aim #lde+r ir man genant
+ERROR	D	534	474	nested markup detected	daz ioach#aim #lde+r ir man genant
+ERROR	D	534	474	nested markup detected	daz ioach#aim #lde+r ir man genant
+ERROR	D	534	474	unbalanced markup: number of '#' and '+' does not match	daz ioach#aim #lde+r ir man genant
+ERROR	D	878	742	unbalanced markup: number of '#' and '+' does not match	noh liep mit kinde ge#^wnne
+ERROR	D	1012	849	unbalanced markup: number of '#' and '+' does not match	#avnd leit ez uf einen ſtêin 
+ERROR	D	1392	1098	nested markup detected	nu wart #z#sov+h+ #d?+ en#f22r+pfolhen ſa
+ERROR	D	1392	1098	nested markup detected	nu wart #z#sov+h+ #d?+ en#f22r+pfolhen ſa
+ERROR	D	1392	1098	nested markup detected	nu wart #z#sov+h+ #d?+ en#f22r+pfolhen ſa
+ERROR	D	1392	1098	nested markup detected	nu wart #z#sov+h+ #d?+ en#f22r+pfolhen ſa
 ERROR	A	131	126	nested markup detected	swaz #rMath#aeu+s+ d#aer+ frone bot
 ERROR	A	131	126	nested markup detected	swaz #rMath#aeu+s+ d#aer+ frone bot
 ERROR	A	131	126	nested markup detected	swaz #rMath#aeu+s+ d#aer+ frone bot
@@ -12,3 +19,129 @@ ERROR	A	213	178	nested markup detected	#rMath#aeu+s+ m#svo+z ez rechen
 ERROR	A	213	178	nested markup detected	#rMath#aeu+s+ m#svo+z ez rechen
 ERROR	A	213	178	nested markup detected	#rMath#aeu+s+ m#svo+z ez rechen
 ERROR	A	213	178	nested markup detected	#rMath#aeu+s+ m#svo+z ez rechen
+ERROR	A	423	333	nested markup detected	anna daz sp#ari+chet gr#aati#a
+ERROR	A	423	333	unbalanced markup: number of '#' and '+' does not match	anna daz sp#ari+chet gr#aati#a
+ERROR	A	566	431	closing '+' without matching '#'	ir hen+lde+ h#suo+b ſi ſchone
+ERROR	A	566	431	unbalanced markup: number of '#' and '+' does not match	ir hen+lde+ h#suo+b ſi ſchone
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	nested markup detected	daz b#?ed#e weip v#and+ man
+ERROR	A	905	688	unbalanced markup: number of '#' and '+' does not match	daz b#?ed#e weip v#and+ man
+ERROR	A	1339	973	nested markup detected	ſi h#aer#tet ander lenge
+ERROR	A	1339	973	nested markup detected	ſi h#aer#tet ander lenge
+ERROR	A	1339	973	nested markup detected	ſi h#aer#tet ander lenge
+ERROR	A	1339	973	nested markup detected	ſi h#aer#tet ander lenge
+ERROR	A	1339	973	nested markup detected	ſi h#aer#tet ander lenge
+ERROR	A	1339	973	nested markup detected	ſi h#aer#tet ander lenge
+ERROR	A	1339	973	nested markup detected	ſi h#aer#tet ander lenge
+ERROR	A	1339	973	nested markup detected	ſi h#aer#tet ander lenge
+ERROR	A	1339	973	nested markup detected	ſi h#aer#tet ander lenge
+ERROR	A	1339	973	nested markup detected	ſi h#aer#tet ander lenge
+ERROR	A	1339	973	nested markup detected	ſi h#aer#tet ander lenge
+ERROR	A	1339	973	nested markup detected	ſi h#aer#tet ander lenge
+ERROR	A	1339	973	nested markup detected	ſi h#aer#tet ander lenge
+ERROR	A	1339	973	nested markup detected	ſi h#aer#tet ander lenge
+ERROR	A	1339	973	nested markup detected	ſi h#aer#tet ander lenge
+ERROR	A	1339	973	unbalanced markup: number of '#' and '+' does not match	ſi h#aer#tet ander lenge
+ERROR	A	1387	1009	closing '+' without matching '#'	ſo g#suo+t bilde #f23v+ v#ro+r+ tr#suo+k
+ERROR	A	1387	1009	closing '+' without matching '#'	ſo g#suo+t bilde #f23v+ v#ro+r+ tr#suo+k
+ERROR	A	1387	1009	unbalanced markup: number of '#' and '+' does not match	ſo g#suo+t bilde #f23v+ v#ro+r+ tr#suo+k
+ERROR	A	1401	1018	closing '+' without matching '#'	v+and+ himiliſche frevde ſpehen
+ERROR	A	1401	1018	unbalanced markup: number of '#' and '+' does not match	v+and+ himiliſche frevde ſpehen
+ERROR	A	1985	1355	unbalanced markup: number of '#' and '+' does not match	v#and ædel geſteine
+ERROR	A	2118	1442	nested markup detected	#^æ+ ich mich ſein v#aer#eine
+ERROR	A	2118	1442	nested markup detected	#^æ+ ich mich ſein v#aer#eine
+ERROR	A	2118	1442	nested markup detected	#^æ+ ich mich ſein v#aer#eine
+ERROR	A	2118	1442	nested markup detected	#^æ+ ich mich ſein v#aer#eine
+ERROR	A	2118	1442	unbalanced markup: number of '#' and '+' does not match	#^æ+ ich mich ſein v#aer#eine
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	nested markup detected	d#aer# iſt wol bechant
+ERROR	A	2262	1535	unbalanced markup: number of '#' and '+' does not match	d#aer# iſt wol bechant
+ERROR	A	2834	1885	closing '+' without matching '#'	wie mohte #adan+ne+ erbeiten
+ERROR	A	2834	1885	unbalanced markup: number of '#' and '+' does not match	wie mohte #adan+ne+ erbeiten
+ERROR	A	3498	2260	closing '+' without matching '#'	rD+ie #?+ magede hab#aen+t ſich an ſey
+ERROR	A	3498	2260	closing '+' without matching '#'	rD+ie #?+ magede hab#aen+t ſich an ſey
+ERROR	A	3498	2260	closing '+' without matching '#'	rD+ie #?+ magede hab#aen+t ſich an ſey
+ERROR	A	3498	2260	unbalanced markup: number of '#' and '+' does not match	rD+ie #?+ magede hab#aen+t ſich an ſey
+ERROR	A	4026	2573	nested markup detected	v#and+ imm#aer+ æwichlichen phlegen AMEN #rdaz iſt daz and#aer+
+ERROR	A	4026	2573	nested markup detected	v#and+ imm#aer+ æwichlichen phlegen AMEN #rdaz iſt daz and#aer+
+ERROR	A	4026	2573	nested markup detected	v#and+ imm#aer+ æwichlichen phlegen AMEN #rdaz iſt daz and#aer+
+ERROR	A	4026	2573	nested markup detected	v#and+ imm#aer+ æwichlichen phlegen AMEN #rdaz iſt daz and#aer+
+ERROR	A	4026	2573	unbalanced markup: number of '#' and '+' does not match	v#and+ imm#aer+ æwichlichen phlegen AMEN #rdaz iſt daz and#aer+
+ERROR	A	4127	2606	closing '+' without matching '#'	in ſant mareien h+#suo+te
+ERROR	A	4127	2606	closing '+' without matching '#'	in ſant mareien h+#suo+te
+ERROR	A	4127	2606	unbalanced markup: number of '#' and '+' does not match	in ſant mareien h+#suo+te
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	nested markup detected	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	4557	2838	unbalanced markup: number of '#' and '+' does not match	wie #f47v+ ſi m#sve#ſen ſein v#aer+lorn
+ERROR	A	5409	3344	unbalanced markup: number of '#' and '+' does not match	#rR+ache#l hiez div aine
+ERROR	A	6415	3949	nested markup detected	die d#aer# ſtête pflagen
+ERROR	A	6415	3949	nested markup detected	die d#aer# ſtête pflagen
+ERROR	A	6415	3949	nested markup detected	die d#aer# ſtête pflagen
+ERROR	A	6415	3949	nested markup detected	die d#aer# ſtête pflagen
+ERROR	A	6415	3949	nested markup detected	die d#aer# ſtête pflagen
+ERROR	A	6415	3949	nested markup detected	die d#aer# ſtête pflagen
+ERROR	A	6415	3949	nested markup detected	die d#aer# ſtête pflagen
+ERROR	A	6415	3949	nested markup detected	die d#aer# ſtête pflagen
+ERROR	A	6415	3949	nested markup detected	die d#aer# ſtête pflagen
+ERROR	A	6415	3949	nested markup detected	die d#aer# ſtête pflagen
+ERROR	A	6415	3949	nested markup detected	die d#aer# ſtête pflagen
+ERROR	A	6415	3949	nested markup detected	die d#aer# ſtête pflagen
+ERROR	A	6415	3949	nested markup detected	die d#aer# ſtête pflagen
+ERROR	A	6415	3949	nested markup detected	die d#aer# ſtête pflagen
+ERROR	A	6415	3949	unbalanced markup: number of '#' and '+' does not match	die d#aer# ſtête pflagen
+ERROR	F	159	25	unbalanced markup: number of '#' and '+' does not match	hirte u#and lebendigez brot
+ERROR	F	228	84	nested markup detected	#rMath#aeu+s ewag#aeli+ſte+
+ERROR	F	228	84	nested markup detected	#rMath#aeu+s ewag#aeli+ſte+
+ERROR	F	228	84	nested markup detected	#rMath#aeu+s ewag#aeli+ſte+
+ERROR	F	228	84	nested markup detected	#rMath#aeu+s ewag#aeli+ſte+
+ERROR	F	228	84	nested markup detected	#rMath#aeu+s ewag#aeli+ſte+
+ERROR	F	228	84	nested markup detected	#rMath#aeu+s ewag#aeli+ſte+
+ERROR	F	228	84	nested markup detected	#rMath#aeu+s ewag#aeli+ſte+
+ERROR	F	228	84	nested markup detected	#rMath#aeu+s ewag#aeli+ſte+
+ERROR	F	228	84	nested markup detected	#rMath#aeu+s ewag#aeli+ſte+

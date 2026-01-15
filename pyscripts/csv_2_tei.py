@@ -8,6 +8,7 @@ from copy import deepcopy
 import csv
 from lxml import etree
 
+from utils import resolve_path_relative_to_script, clear_tei_folder, excel_to_csv
 
 OUT_DIR = "../tei"
 TEMPLATE_PATH = "../templates/tei_template.xml"
@@ -16,22 +17,13 @@ NS = {
     "xml": "http://www.w3.org/XML/1998/namespace",
 }
 LOG_FILE = "../logs/markup_errors.log"
-CSV_PATH = "../testdata/Probeseiten_Wernher.csv"
+EXCEL_PATH = "../testdata/Transkription.xlsx"
+csv_path = ""
+# check if csv exists, else convert from excel
+if not Path(resolve_path_relative_to_script(csv_path)).is_file():
+    csv_path = excel_to_csv(EXCEL_PATH)
 
 ## utils
-
-def clear_tei_folder():
-    out_dir_resolved = resolve_path_relative_to_script(OUT_DIR)
-    for file in out_dir_resolved.glob("*.xml"):
-        file.unlink()
-
-def resolve_path_relative_to_script(file_path: str) -> Path:
-    # check if path is absolute
-    if Path(file_path).is_absolute():
-        return Path(file_path)
-    # else resolve relative to this script's directory
-    script_dir = Path(__file__).resolve().parent
-    return script_dir / file_path
 
 def log_markup_issue(log_path: Path, witness_siglum: str, verse: "Vers", message: str):
     logging.error(
@@ -58,10 +50,9 @@ def tei_sub(parent, tag):
 ### Markup resolution
 
 class MarkupResolver:
-    tagchars = ["s", "a", "d", "z", "l", "r", "f", "?"]
+    tagchars = ["s", "a", "d", "z", "l", "r", "f", "?", "^", "&", ]
     tag_delims = ["#", "+"]
-    
-    
+
     @staticmethod
     def find_unclosed_markup(markup_str: str):
         # find all opening tags
@@ -130,6 +121,9 @@ class MarkupResolver:
             case "#r" : return tei("rub") # Rubrizierungen
             case "#f" : return tei("pb") # Seitenwechsel
             case "#?" : return tei("unclear") #unclear
+            
+            case "#^" : return tei("zirkumflex") #supplied
+            case "#&" : return tei("et") #gap
             case _    : return tei("wrong_markup") # unbekanntes Markup
 
     @staticmethod
@@ -267,7 +261,7 @@ def witnesses_from_csv(file_path: str):
 
 
 def csv_to_tei(csv_file_path: str):
-    clear_tei_folder()
+    clear_tei_folder(OUT_DIR)
     witnesses = witnesses_from_csv(csv_file_path)
     # configure logging to write a fresh log file on each run
     logging.basicConfig(
@@ -284,7 +278,9 @@ def csv_to_tei(csv_file_path: str):
 
 
 if __name__ == "__main__":
-    print(f"{3*'\n'+80*'#'+3*'\n'}\nAttention, this will delete all files in the TEI output folder before processing!{3*'\n'+80*'#'}")
+    nl3 = '\n' * 3
+    hash80 = '#' * 80
+    print(f"{nl3}{hash80}{nl3}\nAttention, this will delete all files in the TEI output folder before processing!{nl3}{hash80}")
     sleep_countdown = 5
     print("Press Enter to start immediately, or type anything and press Enter to abort.")
 
@@ -300,4 +296,4 @@ if __name__ == "__main__":
             else:
                 print("Aborted by user input.")
                 sys.exit(0)
-    csv_to_tei(CSV_PATH)
+    csv_to_tei(csv_path)
