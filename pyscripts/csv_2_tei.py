@@ -1,14 +1,16 @@
 from pathlib import Path
-from time import sleep
-import sys
-import select
 import re
 import logging
 from copy import deepcopy
 import csv
 from lxml import etree
 
-from utils import resolve_path_relative_to_script, clear_tei_folder, excel_to_csv
+from utils import (
+    resolve_path_relative_to_script,
+    clear_tei_folder,
+    excel_to_csv,
+    user_interaction_loop,
+)
 
 OUT_DIR = "../tei"
 TEMPLATE_PATH = "../templates/tei_template.xml"
@@ -23,7 +25,6 @@ csv_path = ""
 if not Path(resolve_path_relative_to_script(csv_path)).is_file():
     csv_path = excel_to_csv(EXCEL_PATH)
 
-## utils
 
 def log_markup_issue(log_path: Path, witness_siglum: str, verse: "Vers", message: str):
     logging.error(
@@ -35,6 +36,7 @@ def log_markup_issue(log_path: Path, witness_siglum: str, verse: "Vers", message
         verse.text_str,
     )
 
+
 ## TEI element creation helpers
 def tei(tag, attributes=None):
     elem = etree.Element(f"{{{NS['tei']}}}{tag}")
@@ -43,20 +45,35 @@ def tei(tag, attributes=None):
             elem.set(key, value)
     return elem
 
+
 def tei_sub(parent, tag):
     return etree.SubElement(parent, f"{{{NS['tei']}}}{tag}")
 
 
 ### Markup resolution
 
+
 class MarkupResolver:
-    tagchars = ["s", "a", "d", "z", "l", "r", "f", "?", "^", "&", ]
+    tagchars = [
+        "s",
+        "a",
+        "d",
+        "z",
+        "l",
+        "r",
+        "f",
+        "?",
+        "^",
+        "&",
+    ]
     tag_delims = ["#", "+"]
 
     @staticmethod
     def find_unclosed_markup(markup_str: str):
         # find all opening tags
-        open_tags = re.findall(r"#([" + "".join(MarkupResolver.tagchars) + "])", markup_str)
+        open_tags = re.findall(
+            r"#([" + "".join(MarkupResolver.tagchars) + "])", markup_str
+        )
         close_tags = re.findall(r"(\+)", markup_str)
         if len(open_tags) != len(close_tags):
             # replace cases in which a + is used instead of #
@@ -64,15 +81,17 @@ class MarkupResolver:
                 r"\+([" + "".join(MarkupResolver.tagchars) + "])",
                 r"#\1",
                 markup_str,
-                count=1
+                count=1,
             )
             if new_markup_str != markup_str:
-                print(f"Corrected markup string from:\n{markup_str}\nto:\n{new_markup_str}\n")
+                print(
+                    f"Corrected markup string from:\n{markup_str}\nto:\n{new_markup_str}\n"
+                )
                 return MarkupResolver.find_unclosed_markup(new_markup_str)
         else:
             return MarkupResolver.find_nested_markup(markup_str)
         return False
-    
+
     @staticmethod
     def find_nested_markup(markup_str: str):
         depth = 0
@@ -103,39 +122,54 @@ class MarkupResolver:
         if depth != 0:
             errors.append("unbalanced markup: number of '#' and '+' does not match")
         return errors
-    
+
     @staticmethod
     def get_element_from_tag(tag: str):
         match tag:
-            case "#s" : return tei("sup") # Superskripte
-            case "#a" : return tei("abbr") # Abbreviaturen
-                #     kombiniert: Nasalstrich, ri, par
-                # "  "   tei(""), kombiniert: Nasalstrich, ri, par
-                # #     separat: er, ro, us
-                # "  "   tei(""), separat: er, ro, us
-                # #     Sonderfälle: d(omi)ni, isr(ahe)l, Math(eu)s
-                # "  "   tei(""), Sonderfälle: d(omi)ni, isr(ahe)l, Math(eu)s
-            case "#d" : return tei("del") # gelöscht
-            case "#z" : return tei("add") # Zusatz
-            case "#l" : return tei("lig") # de-Ligatur
-            case "#r" : return tei("rub") # Rubrizierungen
-            case "#f" : return tei("pb") # Seitenwechsel
-            case "#?" : return tei("unclear") #unclear
-            
-            case "#^" : return tei("zirkumflex") #supplied
-            case "#&" : return tei("et") #gap
-            case _    : return tei("wrong_markup") # unbekanntes Markup
+            case "#s":
+                return tei("sup")  # Superskripte
+            case "#a":
+                return tei("abbr")  # Abbreviaturen
+            #     kombiniert: Nasalstrich, ri, par
+            # "  "   tei(""), kombiniert: Nasalstrich, ri, par
+            # #     separat: er, ro, us
+            # "  "   tei(""), separat: er, ro, us
+            # #     Sonderfälle: d(omi)ni, isr(ahe)l, Math(eu)s
+            # "  "   tei(""), Sonderfälle: d(omi)ni, isr(ahe)l, Math(eu)s
+            case "#d":
+                return tei("del")  # gelöscht
+            case "#z":
+                return tei("add")  # Zusatz
+            case "#l":
+                return tei("lig")  # de-Ligatur
+            case "#r":
+                return tei("rub")  # Rubrizierungen
+            case "#f":
+                return tei("pb")  # Seitenwechsel
+            case "#?":
+                return tei("unclear")  # unclear
+
+            case "#^":
+                return tei("zirkumflex")  # supplied
+            case "#&":
+                return tei("et")  # gap
+            case _:
+                return tei("wrong_markup")  # unbekanntes Markup
 
     @staticmethod
     def resolve_markup(container: etree._Element, markup_str: str):
         i = 0
         current_elem = None
         while i < len(markup_str):
-            if (markup_str[i] == "#" or (markup_str[i] == "+" and current_elem is None)) and i + 1 < len(markup_str):
-                tag = markup_str[i:i+2]
+            if (
+                markup_str[i] == "#" or (markup_str[i] == "+" and current_elem is None)
+            ) and i + 1 < len(markup_str):
+                tag = markup_str[i : i + 2]
                 elem = MarkupResolver.get_element_from_tag(tag)
                 if "wrong_markup" in elem.tag:
-                    print(f"Warning: Unknown markup tag \n'{tag}' \ndetected in \n{markup_str}\n")
+                    print(
+                        f"Warning: Unknown markup tag \n'{tag}' \ndetected in \n{markup_str}\n"
+                    )
                 container.append(elem)
                 current_elem = elem
                 i += 2
@@ -154,25 +188,28 @@ class MarkupResolver:
                 else:
                     current_elem.text = (current_elem.text or "") + char
 
+
 class Vers:
     vers_prefix = "v"
+
     def __init__(self, global_count: int, local_count: int, text_str: str):
         self.global_count = global_count
         self.local_count = local_count
         self.text_str = text_str
-    
+
     def is_empty(self):
         return bool(self.text_str.strip() == "")
-    
+
     def is_book_start(self):
         return False
-    
+
     def to_tei(self):
         vers_elem = tei("l")
         vers_elem.set(f"{{{NS['xml']}}}id", f"{self.vers_prefix}{self.global_count}")
         vers_elem.set("n", f"{self.vers_prefix}{self.local_count}")
         MarkupResolver.resolve_markup(vers_elem, self.text_str)
         return vers_elem
+
 
 class Witness:
     def __init__(self, siglum: str, file_path: str = ""):
@@ -190,7 +227,7 @@ class Witness:
     def make_linegroup(self):
         lg_elem = tei("lg")
         return lg_elem
-    
+
     def parse_verses(self):
         for verse in self.verses:
             # analyze markup and route any problems to the logger
@@ -199,7 +236,7 @@ class Witness:
                 log_markup_issue(Path(LOG_FILE), self.siglum, verse, err)
             vers_elem = verse.to_tei()
             self.container.append(vers_elem)
-            
+
     def append_vers_str(self, vers: str):
         self.global_verse_count += 1
         empty = False
@@ -208,12 +245,12 @@ class Witness:
         else:
             empty = True
         vers = Vers(
-            global_count=self.global_verse_count, 
-            local_count=self.local_verses if not empty else "", 
-            text_str=vers
+            global_count=self.global_verse_count,
+            local_count=self.local_verses if not empty else "",
+            text_str=vers,
         )
         self.verses.append(vers)
-        
+
     def load_template(self):
         resolved_path = resolve_path_relative_to_script(TEMPLATE_PATH)
         with open(resolved_path, "r", encoding="utf-8") as file:
@@ -235,12 +272,8 @@ class Witness:
     def save_to_file(self):
         with open(self.file_path, "wb") as file:
             self.tree.write(
-                file, encoding="utf-8", 
-                xml_declaration=True, 
-                pretty_print=True
+                file, encoding="utf-8", xml_declaration=True, pretty_print=True
             )
-
-## Main functions
 
 def witnesses_from_csv(file_path: str):
     resolved_path = resolve_path_relative_to_script(file_path)
@@ -278,22 +311,5 @@ def csv_to_tei(csv_file_path: str):
 
 
 if __name__ == "__main__":
-    nl3 = '\n' * 3
-    hash80 = '#' * 80
-    print(f"{nl3}{hash80}{nl3}\nAttention, this will delete all files in the TEI output folder before processing!{nl3}{hash80}")
-    sleep_countdown = 5
-    print("Press Enter to start immediately, or type anything and press Enter to abort.")
-
-    for i in range(sleep_countdown, 0, -1):
-        print(f"Continuing in {i} seconds... (press Enter to continue, any other input to abort)")
-        # Wait up to 1 second for user input
-        rlist, _, _ = select.select([sys.stdin], [], [], 1)
-        if rlist:
-            line = sys.stdin.readline()
-            if line.strip() == "":
-                # Empty line: user pressed Enter only -> skip countdown
-                break
-            else:
-                print("Aborted by user input.")
-                sys.exit(0)
+    user_interaction_loop()
     csv_to_tei(csv_path)
