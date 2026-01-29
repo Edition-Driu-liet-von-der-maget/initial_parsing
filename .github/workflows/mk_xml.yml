@@ -1,0 +1,40 @@
+# Simple workflow for deploying static content to GitHub Pages
+name: create initial XML files from csv/xslx files
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main  
+    paths:
+      - 'data/**'
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  packages: write
+  pages: write
+  id-token: write
+
+concurrency:
+  cancel-in-progress: false
+
+jobs:
+  # Single deploy job since we're just deploying
+  deploy:
+    environment:
+      name: xml maker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: install python things
+        run: pip install -r pyscripts/requirements.txt 
+      - name: generate initial xml files
+        run: python3 initial_parsing/pyscripts/csv_2_tei.py
+      - name: commit changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "fresh initially parsed xml files"
+          commit_user_name: "github actions"
+          commit_user_email: "github-actions@github.com"
