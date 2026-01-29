@@ -46,8 +46,8 @@ def tei(tag, attributes=None):
     return elem
 
 
-def tei_sub(parent, tag):
-    return etree.SubElement(parent, f"{{{NS['tei']}}}{tag}")
+def tei_sub(parent, tag, attributes={}):
+    return etree.SubElement(parent, f"{{{NS['tei']}}}{tag}", attributes)
 
 
 ### Markup resolution
@@ -157,6 +157,62 @@ class MarkupResolver:
                 return tei("wrong_markup")  # unbekanntes Markup
 
     @staticmethod
+    def translate_to_tei(element: etree._Element):
+        if element is None:
+            return None
+        tag_name = etree.QName(element).localname
+        text = element.text
+        match tag_name:
+            case "sup":
+                tei_choice = tei("choice", {"type": "superscript"})
+                abbr = tei_sub(tei_choice, "abbr")
+                abbr.text = text[0]
+                hi = tei_sub(abbr, "hi", {"rend": "superscript"})
+                hi.text = text[-1]
+                expan = tei_sub(tei_choice, "expan")
+                expan.text = text
+                return tei_choice
+            case "abbr":
+                tei_choice = tei("choice", {"type": "abbreviation"})
+                abbr = tei_sub(tei_choice, "abbr")
+                abbr.text = ""
+                expan = tei_sub(tei_choice, "expan")
+                expan.text = text
+                return tei_choice
+            case "del":
+                pass
+            case "add":
+                pass
+            case "lig":
+                tei_choice = tei("choice", {"type": "ligature"})
+                abbr = tei_sub(tei_choice, "orig")
+                abbr.text = text
+                reg = tei_sub(tei_choice, "reg")
+                reg.text = text
+                return tei_choice
+            case "rub":
+                # rubrizierung
+                tei_hi = tei("hi", {"rend": "rubrication"})
+                tei_hi.text = text
+                return tei_hi
+            case "pb":
+                pass
+            case "unclear":
+                pass
+            case "zirkumflex":
+                pass
+            case "et":
+                tei_choice = tei("choice", {"type": "et_ligature"})
+                abbr = tei_sub(tei_choice, "orig")
+                abbr.text = "&"
+                reg = tei_sub(tei_choice, "reg")
+                reg.text = "et"
+                return tei_choice
+            case _:
+                pass
+        return None
+
+    @staticmethod
     def resolve_markup(container: etree._Element, markup_str: str):
         i = 0
         current_elem = None
@@ -174,6 +230,14 @@ class MarkupResolver:
                 current_elem = elem
                 i += 2
             elif markup_str[i] == "+":
+                # closes current element, time to convert it to actual TEI
+                old_elem = current_elem
+                new_shiny_element = MarkupResolver.translate_to_tei(old_elem)
+                if new_shiny_element is not None and old_elem is not None:
+                    new_shiny_element.tail = old_elem.tail
+                    parent = old_elem.getparent()
+                    if parent is not None:
+                        parent.replace(old_elem, new_shiny_element)
                 current_elem = None
                 i += 1
             else:
@@ -227,9 +291,10 @@ class Witness:
     def make_linegroup(self):
         lg_elem = tei("lg")
         return lg_elem
-
+    
     def parse_verses(self):
         for verse in self.verses:
+            verse: Vers
             # analyze markup and route any problems to the logger
             errors = MarkupResolver.analyze_markup(verse.text_str)
             for err in errors:
