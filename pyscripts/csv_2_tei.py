@@ -28,10 +28,9 @@ if not Path(resolve_path_relative_to_script(csv_path)).is_file():
 
 def log_markup_issue(log_path: Path, witness_siglum: str, verse: "Vers", message: str):
     logging.error(
-        "%s\t%s\t%s\t%s\t%s",
+        "%s\t%s\t\t%s\t%s",
         witness_siglum,
-        verse.global_count,
-        verse.local_count,
+        f"{verse.local_count}".rjust(6),
         message,
         verse.text_str,
     )
@@ -65,6 +64,7 @@ class MarkupResolver:
         "?",
         "^",
         "&",
+        "i",
     ]
     tag_delims = ["#", "+"]
 
@@ -121,7 +121,7 @@ class MarkupResolver:
                 depth -= 1
         if depth != 0:
             errors.append("unbalanced markup: number of '#' and '+' does not match")
-        return errors
+        return set(errors)
 
     @staticmethod
     def get_element_from_tag(tag: str):
@@ -129,13 +129,7 @@ class MarkupResolver:
             case "#s":
                 return tei("sup")  # Superskripte
             case "#a":
-                return tei("abbr")  # Abbreviaturen
-            #     kombiniert: Nasalstrich, ri, par
-            # "  "   tei(""), kombiniert: Nasalstrich, ri, par
-            # #     separat: er, ro, us
-            # "  "   tei(""), separat: er, ro, us
-            # #     Sonderfälle: d(omi)ni, isr(ahe)l, Math(eu)s
-            # "  "   tei(""), Sonderfälle: d(omi)ni, isr(ahe)l, Math(eu)s
+                return tei("abbr") # abbreviation
             case "#d":
                 return tei("del")  # gelöscht
             case "#z":
@@ -148,11 +142,12 @@ class MarkupResolver:
                 return tei("pb")  # Seitenwechsel
             case "#?":
                 return tei("unclear")  # unclear
-
+            case "#i":
+                return tei("initial")  # initial
             case "#^":
                 return tei("zirkumflex")  # supplied
             case "#&":
-                return tei("et")  # gap
+                return tei("et")  # et-ligature
             case _:
                 return tei("wrong_markup")  # unbekanntes Markup
 
@@ -208,12 +203,17 @@ class MarkupResolver:
                 reg = tei_sub(tei_choice, "reg")
                 reg.text = "et"
                 return tei_choice
+            case "initial":
+                tei_hi = tei("hi", {"rend": "initial"})
+                tei_hi.text = text
+                return tei_hi
             case _:
                 pass
         return None
 
     @staticmethod
     def resolve_markup(container: etree._Element, markup_str: str):
+        errors = []
         i = 0
         current_elem = None
         while i < len(markup_str):
@@ -226,6 +226,8 @@ class MarkupResolver:
                     print(
                         f"Warning: Unknown markup tag \n'{tag}' \ndetected in \n{markup_str}\n"
                     )
+                    # must log these too!
+                    errors.append(f"Unknown markup tag '{tag}' detected in {markup_str}")
                 container.append(elem)
                 current_elem = elem
                 i += 2
@@ -251,6 +253,7 @@ class MarkupResolver:
                         last_elem.tail = (last_elem.tail or "") + char
                 else:
                     current_elem.text = (current_elem.text or "") + char
+        return errors
 
 
 class Vers:
@@ -270,9 +273,10 @@ class Vers:
     def to_tei(self):
         vers_elem = tei("l")
         vers_elem.set(f"{{{NS['xml']}}}id", f"{self.vers_prefix}{self.global_count}")
-        vers_elem.set("n", f"{self.vers_prefix}{self.local_count}")
-        MarkupResolver.resolve_markup(vers_elem, self.text_str)
-        return vers_elem
+        if self.local_count != "":
+            vers_elem.set("n", f"{self.vers_prefix}{self.local_count}")
+        errors = MarkupResolver.resolve_markup(vers_elem, self.text_str)
+        return vers_elem, errors
 
 
 class Witness:
@@ -286,8 +290,13 @@ class Witness:
         self.container = None
         self.local_verses = 0
         self.load_template()
+        self.add_title()
         self.global_verse_count = 0
-
+    
+    def add_title(self):
+        title_elem = self.root.find(".//tei:title", namespaces=NS)
+        title_elem.text = f"{self.siglum} (Zeuge)"
+    
     def make_linegroup(self):
         lg_elem = tei("lg")
         return lg_elem
@@ -299,7 +308,9 @@ class Witness:
             errors = MarkupResolver.analyze_markup(verse.text_str)
             for err in errors:
                 log_markup_issue(Path(LOG_FILE), self.siglum, verse, err)
-            vers_elem = verse.to_tei()
+            vers_elem, errors = verse.to_tei()
+            for err in errors:
+                log_markup_issue(Path(LOG_FILE), self.siglum, verse, err)
             self.container.append(vers_elem)
 
     def append_vers_str(self, vers: str):
