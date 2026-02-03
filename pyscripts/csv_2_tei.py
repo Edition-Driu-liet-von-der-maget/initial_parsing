@@ -142,10 +142,12 @@ class MarkupResolver:
                 return tei("pb")  # Seitenwechsel
             case "#?":
                 return tei("unclear")  # unclear
-            case "#i":
+            case "#I":
                 return tei("initial")  # initial
+            case "#i":
+                return tei("lombard")  # lombard
             case "#^":
-                return tei("zirkumflex")  # supplied
+                return tei("zirkumflex")  # supplied -> informatives Markup
             case "#&":
                 return tei("et")  # et-ligature
             case _:
@@ -153,6 +155,9 @@ class MarkupResolver:
 
     @staticmethod
     def translate_to_tei(element: etree._Element):
+        is_end_of_word = bool(element.tail)
+        previous_text = ""
+        siglum = ""
         if element is None:
             return None
         tag_name = etree.QName(element).localname
@@ -170,8 +175,60 @@ class MarkupResolver:
             case "abbr":
                 tei_choice = tei("choice", {"type": "abbreviation"})
                 abbr = tei_sub(tei_choice, "abbr")
-                abbr.text = ""
+                abbr.text = text # nasalstrich hier
                 expan = tei_sub(tei_choice, "expan")
+                if text in ["en", "em"]:
+                    abbr.text = "e" + "nasalstrich"
+                elif text in ["men", "nem"]:
+                    abbr.text = "m" + "nasalstrich"
+                elif text in ["mm,", "nn"]:
+                    abbr.text = text + "nasalstrich"
+                elif text in ["an", "am", "en", "em", "im","in", "om","on", "un", "um"]:
+                    # if in handschrift A, nasalstrich == n superscript, vorrausgehenden buchstaben identifizieren und superscript setzen
+                    # else normaler nasalstrich
+                    abbr.text = text + "nasalstrich"
+                elif text == "vnd":
+                    abbr.text = "v" + "nasalstrich"
+                elif text == "nd":
+                    abbr.text = "n" + "nasalstrich"
+                elif text == "ri":
+                     # superscript, vorrausgehenden buchstaben identifizieren und superscript "i" setzen
+                    abbr.text = ""
+                elif text in ["per", "par"]:
+                    # p mit strich durch die Unterlänge
+                    abbr.text = "p" + "nasalstrich"
+                elif text == "rum":
+                    abbr.text = "Alienzeichen"
+                elif text in ["den", "dem", "dan"]:
+                    abbr.text = "s" #d mit strich in der oberlänge
+                elif text in ["ben", "hem", "ham", "len", "lem"]:
+                    abbr.text = text[0] #mit strich in der oberlänge
+                elif text == "er":
+                    # superscript, vorrausgehenden buchstaben identifizieren und superscript "Supermanzeichen"setzen
+                    abbr.text = ""
+                elif text == "ra":
+                    # superscript, vorrausgehenden buchstaben identifizieren und superscript "tilde" setzen
+                    abbr.text = ""
+                elif text == "ra":
+                    # superscript, vorrausgehenden buchstaben identifizieren und superscript "°" setzen
+                    abbr.text = ""
+                elif text == "us":
+                    # vorrausgehenden buchstaben identifizieren und danach "halbes herz" setzen
+                    abbr.text = ""
+                elif text == "az":
+                    # vorrausgehenden buchstaben identifizieren und danach "c" setzen
+                    abbr.text = ""
+                else:
+                    abbr.text = text                    
+                # if text in ["a", "e", "i", "o", "u"]:
+                #     expan.text = text + "n"
+                # elif text in ["m", "n"]:
+                #     if not is_end_of_word:
+                #         expan.text = 2*text
+                #     else:
+                #         expan.text = text + "en" 
+                # elif text == "v":
+                #     expan.text = "und"
                 expan.text = text
                 return tei_choice
             case "del":
@@ -205,6 +262,10 @@ class MarkupResolver:
                 return tei_choice
             case "initial":
                 tei_hi = tei("hi", {"rend": "initial"})
+                tei_hi.text = text
+                return tei_hi
+            case "lombard":
+                tei_hi = tei("hi", {"rend": "lombard"})
                 tei_hi.text = text
                 return tei_hi
             case _:
