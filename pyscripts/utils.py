@@ -16,8 +16,8 @@ def resolve_path_relative_to_script(file_path: str) -> Path:
 
 def excel_to_csv(file_path: str):
     abs_file_path: Path = resolve_path_relative_to_script(file_path)
-    df = pd.read_excel(abs_file_path, header=0) #, sheetname='<your sheet>'
-    csv_file_path = abs_file_path.with_suffix('.csv')
+    df = pd.read_excel(abs_file_path, header=0)
+    csv_file_path = abs_file_path.with_name(abs_file_path.stem + "_generated.csv")
     df.to_csv(csv_file_path, index=False, quotechar="'")
     return csv_file_path
 
