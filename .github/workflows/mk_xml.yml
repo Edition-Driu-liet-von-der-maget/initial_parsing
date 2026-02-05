@@ -9,9 +9,9 @@ on:
     paths:
       - 'data/**'
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+# Sets permissions of the GITHUB_TOKEN to allow committing changed files
 permissions:
-  contents: read
+  contents: write
   packages: write
   pages: write
   id-token: write
