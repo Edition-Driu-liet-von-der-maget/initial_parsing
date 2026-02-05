@@ -237,7 +237,7 @@ class MarkupResolver:
                 elif text == "nd":
                     abbr.text = "n" + macron
                 elif text == "ri":
-                     # superscript, vorrausgehenden buchstaben identifizieren und superscript "i" setzen
+                    # superscript, vorrausgehenden buchstaben identifizieren und superscript "i" setzen
                     prev_char = MarkupResolver.clip_previous_text(element)
                     tei_choice = tei("choice", {"type": "superscript"})
                     abbr = tei_sub(tei_choice, "abbr")
@@ -334,16 +334,18 @@ class MarkupResolver:
         current_elem = None
         while i < len(markup_str):
             if (
-                markup_str[i] == "#" or (markup_str[i] == "+" and current_elem is None)
+                markup_str[i] == "#" or (
+                    markup_str[i] == "+" and current_elem is None)
             ) and i + 1 < len(markup_str):
-                tag = markup_str[i : i + 2]
+                tag = markup_str[i: i + 2]
                 elem = MarkupResolver.get_element_from_tag(tag)
                 if "wrong_markup" in elem.tag:
                     print(
                         f"Warning: Unknown markup tag \n'{tag}' \ndetected in \n{markup_str}\n"
                     )
                     # must log these too!
-                    errors.append(f"Unknown markup tag '{tag}' detected in {markup_str}")
+                    errors.append(
+                        f"Unknown markup tag '{tag}' detected in {markup_str}")
                 container.append(elem)
                 current_elem = elem
                 i += 2
@@ -352,7 +354,8 @@ class MarkupResolver:
                 if current_elem is not None:
                     old_elem = current_elem
                     # get previous char to decide on nasalstrich handling
-                    new_shiny_element = MarkupResolver.translate_to_tei(old_elem, siglum)
+                    new_shiny_element = MarkupResolver.translate_to_tei(
+                        old_elem, siglum)
                     if new_shiny_element is not None and old_elem is not None:
                         new_shiny_element.tail = old_elem.tail
                         parent = old_elem.getparent()
@@ -391,10 +394,12 @@ class Vers:
 
     def to_tei(self):
         vers_elem = tei("l")
-        vers_elem.set(f"{{{NS['xml']}}}id", f"{self.vers_prefix}{self.global_count}")
+        vers_elem.set(f"{{{NS['xml']}}}id",
+                      f"{self.vers_prefix}{self.global_count}")
         if self.local_count != "":
             vers_elem.set("n", f"{self.vers_prefix}{self.local_count}")
-        errors = MarkupResolver.resolve_markup(vers_elem, self.text_str, self.siglum)
+        errors = MarkupResolver.resolve_markup(
+            vers_elem, self.text_str, self.siglum)
         return vers_elem, errors
 
 
@@ -411,15 +416,42 @@ class Witness:
         self.load_template()
         self.add_title()
         self.global_verse_count = 0
-    
+
+
+    def add_structure(self):
+        reversed_section_marks = reversed(
+            self.root.findall(
+                ".//tei:hi[@rend='initial' or @rend='lombard']",
+                namespaces=NS,
+            )
+        )
+        for mark in reversed_section_marks:
+            lg_element = tei("lg", {"type": "sub_group"})
+            mark.addprevious(lg_element)
+            nex = lg_element.getnext()
+            while nex is not None and etree.QName(nex).localname != "lg":
+                to_move = nex
+                nex = to_move.getnext()
+                lg_element.append(to_move)
+        initials_reversed = reversed(self.root.findall(".//tei:hi[@rend='initial']", namespaces=NS))
+        for initial in initials_reversed:
+            lg_element = tei("lg", {"type": "group"})
+            initial_parent = initial.getparent()
+            if initial_parent is not None and initial_parent.tag == f"{{{NS['tei']}}}lg":
+                initial_parent.addprevious(lg_element)
+                lg_element.append(initial_parent)
+                nex = lg_element.getnext()
+                # check if next is not another lg of type initial
+                while nex is not None and not (etree.QName(nex).localname == "lg" and nex.get("type") == "group"):
+                    to_move = nex
+                    nex = to_move.getnext()
+                    lg_element.append(to_move)
+
+
     def add_title(self):
         title_elem = self.root.find(".//tei:title", namespaces=NS)
         title_elem.text = f"{self.siglum} (Zeuge)"
-    
-    def make_linegroup(self):
-        lg_elem = tei("lg")
-        return lg_elem
-    
+
     def parse_verses(self):
         for verse in self.verses:
             verse: Vers
@@ -454,7 +486,7 @@ class Witness:
         self.template = deepcopy(self.tree)
         self.root = self.tree.getroot()
         self.body = self.root.find(".//tei:text/tei:body", namespaces=NS)
-        self.container = self.make_linegroup()
+        self.container = tei("lg", {"type": "witness", "n": self.siglum})
         self.body.append(self.container)
 
     def set_filename(self):
@@ -470,6 +502,7 @@ class Witness:
             self.tree.write(
                 file, encoding="utf-8", xml_declaration=True, pretty_print=True
             )
+
 
 def witnesses_from_csv(file_path: str):
     resolved_path = resolve_path_relative_to_script(file_path)
@@ -502,6 +535,7 @@ def csv_to_tei(csv_file_path: str):
     )
     for witness in witnesses.values():
         witness.parse_verses()
+        witness.add_structure()
         witness.set_filename()
         witness.save_to_file()
 
