@@ -1,4 +1,5 @@
 from pathlib import Path
+from pydoc import text
 import re
 import logging
 from copy import deepcopy
@@ -36,7 +37,7 @@ def log_markup_issue(log_path: Path, witness_siglum: str, verse: "Vers", message
     )
 
 
-## TEI element creation helpers
+# TEI element creation helpers
 def tei(tag, attributes=None):
     elem = etree.Element(f"{{{NS['tei']}}}{tag}")
     if attributes:
@@ -49,7 +50,7 @@ def tei_sub(parent, tag, attributes={}):
     return etree.SubElement(parent, f"{{{NS['tei']}}}{tag}", attributes)
 
 
-### Markup resolution
+# Markup resolution
 
 
 class MarkupResolver:
@@ -120,7 +121,8 @@ class MarkupResolver:
                     errors.append("closing '+' without matching '#'")
                 depth -= 1
         if depth != 0:
-            errors.append("unbalanced markup: number of '#' and '+' does not match")
+            errors.append(
+                "unbalanced markup: number of '#' and '+' does not match")
         return set(errors)
 
     @staticmethod
@@ -129,7 +131,7 @@ class MarkupResolver:
             case "#s":
                 return tei("sup")  # Superskripte
             case "#a":
-                return tei("abbr") # abbreviation
+                return tei("abbr")  # abbreviation
             case "#d":
                 return tei("del")  # gelöscht
             case "#z":
@@ -154,7 +156,41 @@ class MarkupResolver:
                 return tei("wrong_markup")  # unbekanntes Markup
 
     @staticmethod
-    def translate_to_tei(element: etree._Element):
+    def clip_previous_text(element: etree._Element):
+        previous_elem = element.getprevious()
+        if previous_elem is None:
+            parent = element.getparent()
+            if parent is not None and parent.text:
+                if len(parent.text) == 1:
+                    text = parent.text
+                    parent.text = ""
+                    return text
+                else:
+                    parent.text = parent.text[:-1]
+                    return parent.text[-1]
+        if previous_elem.tail:
+            if len(previous_elem.tail) == 1:
+                text = previous_elem.tail
+                previous_elem.tail = ""
+                return text
+            else:
+                previous_elem.tail = previous_elem.tail[:-1]
+                return previous_elem.tail[-1]
+        elif previous_elem.text:
+            if len(previous_elem.text) == 1:
+                text = previous_elem.text
+                previous_elem.text = ""
+                return text
+            else:
+                previous_elem.text = previous_elem.text[:-1]
+                return previous_elem.text[-1]
+        raise ValueError(
+            f"No previous text found to clip: {etree.tostring(element)}")
+
+    @staticmethod
+    def translate_to_tei(element: etree._Element, siglum: str):
+        macron = "\u0304"
+        unterlänge_strich = "\uA751"
         is_end_of_word = bool(element.tail)
         previous_text = ""
         siglum = ""
@@ -175,61 +211,81 @@ class MarkupResolver:
             case "abbr":
                 tei_choice = tei("choice", {"type": "abbreviation"})
                 abbr = tei_sub(tei_choice, "abbr")
-                abbr.text = text # nasalstrich hier
                 expan = tei_sub(tei_choice, "expan")
+                expan.text = text
                 if text in ["en", "em"]:
-                    abbr.text = "e" + "nasalstrich"
+                    abbr.text = "e" + macron
                 elif text in ["men", "nem"]:
-                    abbr.text = "m" + "nasalstrich"
+                    abbr.text = "m" + macron
                 elif text in ["mm,", "nn"]:
-                    abbr.text = text + "nasalstrich"
-                elif text in ["an", "am", "en", "em", "im","in", "om","on", "un", "um"]:
-                    # if in handschrift A, nasalstrich == n superscript, vorrausgehenden buchstaben identifizieren und superscript setzen
-                    # else normaler nasalstrich
-                    abbr.text = text + "nasalstrich"
+                    abbr.text = text[0] + macron
+                elif text in ["an", "am", "en", "em", "im", "in", "om", "on", "un", "um"]:
+                    if siglum == "A":
+                        prev_char = MarkupResolver.clip_previous_text(element)
+                        tei_choice = tei("choice", {"type": "superscript"})
+                        abbr = tei_sub(tei_choice, "abbr")
+                        abbr.text = prev_char
+                        hi = tei_sub(abbr, "hi", {"rend": "superscript"})
+                        hi.text = "n"
+                        expan = tei_sub(tei_choice, "expan")
+                        expan.text = text
+                        return tei_choice
+                    else:
+                        abbr.text = text[0] + macron
                 elif text == "vnd":
-                    abbr.text = "v" + "nasalstrich"
+                    abbr.text = "v" + macron
                 elif text == "nd":
-                    abbr.text = "n" + "nasalstrich"
+                    abbr.text = "n" + macron
                 elif text == "ri":
                      # superscript, vorrausgehenden buchstaben identifizieren und superscript "i" setzen
-                    abbr.text = ""
+                    prev_char = MarkupResolver.clip_previous_text(element)
+                    tei_choice = tei("choice", {"type": "superscript"})
+                    abbr = tei_sub(tei_choice, "abbr")
+                    abbr.text = prev_char
+                    hi = tei_sub(abbr, "hi", {"rend": "superscript"})
+                    hi.text = "i"
+                    expan = tei_sub(tei_choice, "expan")
+                    expan.text = text
+                    return tei_choice
                 elif text in ["per", "par"]:
                     # p mit strich durch die Unterlänge
-                    abbr.text = "p" + "nasalstrich"
+                    abbr.text = "p" + unterlänge_strich
                 elif text == "rum":
-                    abbr.text = "Alienzeichen"
+                    abbr.text = "r+" + "\uA75B"
                 elif text in ["den", "dem", "dan"]:
-                    abbr.text = "s" #d mit strich in der oberlänge
+                    abbr.text = "d" + macron
                 elif text in ["ben", "hem", "ham", "len", "lem"]:
-                    abbr.text = text[0] #mit strich in der oberlänge
+                    abbr.text = text[0] + macron
                 elif text == "er":
                     # superscript, vorrausgehenden buchstaben identifizieren und superscript "Supermanzeichen"setzen
-                    abbr.text = ""
+                    prev_char = MarkupResolver.clip_previous_text(element)
+                    tei_choice = tei("choice", {"type": "superscript"})
+                    abbr = tei_sub(tei_choice, "abbr")
+                    abbr.text = prev_char
+                    hi = tei_sub(abbr, "hi", {"rend": "superscript"})
+                    hi.text = "s"
+                    expan = tei_sub(tei_choice, "expan")
+                    expan.text = text
+                    return tei_choice
                 elif text == "ra":
                     # superscript, vorrausgehenden buchstaben identifizieren und superscript "tilde" setzen
-                    abbr.text = ""
+                    prev_char = MarkupResolver.clip_previous_text(element)
+                    abbr.text = prev_char + "\u0303"
                 elif text == "ra":
                     # superscript, vorrausgehenden buchstaben identifizieren und superscript "°" setzen
-                    abbr.text = ""
+                    prev_char = MarkupResolver.clip_previous_text(element)
+                    abbr.text = prev_char + "\u030A"
                 elif text == "us":
                     # vorrausgehenden buchstaben identifizieren und danach "halbes herz" setzen
-                    abbr.text = ""
+                    prev_char = MarkupResolver.clip_previous_text(element)
+                    # abbr.text = prev_char + "\ua770"
+                    abbr.text = prev_char + "\ua75b"
                 elif text == "az":
                     # vorrausgehenden buchstaben identifizieren und danach "c" setzen
-                    abbr.text = ""
+                    prev_char = MarkupResolver.clip_previous_text(element)
+                    abbr.text = prev_char + " \u1dd1"
                 else:
-                    abbr.text = text                    
-                # if text in ["a", "e", "i", "o", "u"]:
-                #     expan.text = text + "n"
-                # elif text in ["m", "n"]:
-                #     if not is_end_of_word:
-                #         expan.text = 2*text
-                #     else:
-                #         expan.text = text + "en" 
-                # elif text == "v":
-                #     expan.text = "und"
-                expan.text = text
+                    abbr.text = text
                 return tei_choice
             case "del":
                 pass
@@ -243,7 +299,6 @@ class MarkupResolver:
                 reg.text = text
                 return tei_choice
             case "rub":
-                # rubrizierung
                 tei_hi = tei("hi", {"rend": "rubrication"})
                 tei_hi.text = text
                 return tei_hi
@@ -273,7 +328,7 @@ class MarkupResolver:
         return None
 
     @staticmethod
-    def resolve_markup(container: etree._Element, markup_str: str):
+    def resolve_markup(container: etree._Element, markup_str: str, siglum: str):
         errors = []
         i = 0
         current_elem = None
@@ -294,14 +349,16 @@ class MarkupResolver:
                 i += 2
             elif markup_str[i] == "+":
                 # closes current element, time to convert it to actual TEI
-                old_elem = current_elem
-                new_shiny_element = MarkupResolver.translate_to_tei(old_elem)
-                if new_shiny_element is not None and old_elem is not None:
-                    new_shiny_element.tail = old_elem.tail
-                    parent = old_elem.getparent()
-                    if parent is not None:
-                        parent.replace(old_elem, new_shiny_element)
-                current_elem = None
+                if current_elem is not None:
+                    old_elem = current_elem
+                    # get previous char to decide on nasalstrich handling
+                    new_shiny_element = MarkupResolver.translate_to_tei(old_elem, siglum)
+                    if new_shiny_element is not None and old_elem is not None:
+                        new_shiny_element.tail = old_elem.tail
+                        parent = old_elem.getparent()
+                        if parent is not None:
+                            parent.replace(old_elem, new_shiny_element)
+                    current_elem = None
                 i += 1
             else:
                 char = markup_str[i]
@@ -320,10 +377,11 @@ class MarkupResolver:
 class Vers:
     vers_prefix = "v"
 
-    def __init__(self, global_count: int, local_count: int, text_str: str):
+    def __init__(self, global_count: int, local_count: int, text_str: str, siglum: str = ""):
         self.global_count = global_count
         self.local_count = local_count
         self.text_str = text_str
+        self.siglum = siglum
 
     def is_empty(self):
         return bool(self.text_str.strip() == "")
@@ -336,7 +394,7 @@ class Vers:
         vers_elem.set(f"{{{NS['xml']}}}id", f"{self.vers_prefix}{self.global_count}")
         if self.local_count != "":
             vers_elem.set("n", f"{self.vers_prefix}{self.local_count}")
-        errors = MarkupResolver.resolve_markup(vers_elem, self.text_str)
+        errors = MarkupResolver.resolve_markup(vers_elem, self.text_str, self.siglum)
         return vers_elem, errors
 
 
@@ -385,6 +443,7 @@ class Witness:
             global_count=self.global_verse_count,
             local_count=self.local_verses if not empty else "",
             text_str=vers,
+            siglum=self.siglum
         )
         self.verses.append(vers)
 
