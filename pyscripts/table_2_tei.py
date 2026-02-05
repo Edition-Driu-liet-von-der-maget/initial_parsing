@@ -420,7 +420,7 @@ class Witness:
 
     def add_structure(self):
         reversed_section_marks = reversed(
-            self.root.findall(
+            self.root.xpath(
                 ".//tei:hi[@rend='initial' or @rend='lombard']",
                 namespaces=NS,
             )
