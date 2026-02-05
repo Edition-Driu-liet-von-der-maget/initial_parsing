@@ -421,31 +421,30 @@ class Witness:
     def add_structure(self):
         reversed_section_marks = reversed(
             self.root.xpath(
-                ".//tei:hi[@rend='initial' or @rend='lombard']",
+                ".//tei:l[./tei:hi[@rend='initial' or @rend='lombard']]",
                 namespaces=NS,
             )
         )
         for mark in reversed_section_marks:
             lg_element = tei("lg", {"type": "sub_group"})
             mark.addprevious(lg_element)
+            lg_element.append(mark)
             nex = lg_element.getnext()
             while nex is not None and etree.QName(nex).localname != "lg":
                 to_move = nex
                 nex = to_move.getnext()
                 lg_element.append(to_move)
-        initials_reversed = reversed(self.root.findall(".//tei:hi[@rend='initial']", namespaces=NS))
-        for initial in initials_reversed:
+        initials_groups_reversed = reversed(self.root.xpath("tei:lg[@type='sub_group' and ./tei:l[./tei:hi[@rend='initial']]]", namespaces=NS))
+        for initial_group in initials_groups_reversed:
             lg_element = tei("lg", {"type": "group"})
-            initial_parent = initial.getparent()
-            if initial_parent is not None and initial_parent.tag == f"{{{NS['tei']}}}lg":
-                initial_parent.addprevious(lg_element)
-                lg_element.append(initial_parent)
-                nex = lg_element.getnext()
-                # check if next is not another lg of type initial
-                while nex is not None and not (etree.QName(nex).localname == "lg" and nex.get("type") == "group"):
-                    to_move = nex
-                    nex = to_move.getnext()
-                    lg_element.append(to_move)
+            initial_group.addprevious(lg_element)
+            lg_element.append(initial_group)
+            nex = lg_element.getnext()
+            # check if next is not another lg of type initial
+            while nex is not None and not (etree.QName(nex).localname == "lg" and nex.get("type") == "group"):
+                to_move = nex
+                nex = to_move.getnext()
+                lg_element.append(to_move)
 
 
     def add_title(self):
