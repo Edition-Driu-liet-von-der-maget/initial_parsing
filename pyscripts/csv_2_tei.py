@@ -19,7 +19,7 @@ NS = {
     "xml": "http://www.w3.org/XML/1998/namespace",
 }
 LOG_FILE = "../logs/markup_errors.log"
-EXCEL_PATH = "../testdata/Transkription.xlsx"
+EXCEL_PATH = "../data/Transkription.xlsx"
 csv_path = ""
 # check if csv exists, else convert from excel
 if not Path(resolve_path_relative_to_script(csv_path)).is_file():
