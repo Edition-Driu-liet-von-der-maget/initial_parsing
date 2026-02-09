@@ -394,12 +394,12 @@ class Vers:
 
     def to_tei(self):
         vers_elem = tei("l")
-        vers_elem.set(f"{{{NS['xml']}}}id",
-                      f"{self.vers_prefix}{self.global_count}")
+        if not self.local_count and not self.global_count:
+            raise ValueError("At least one of global_count or local_count must be provided")
         if self.local_count != "":
-            vers_elem.set("n", f"{self.vers_prefix}{self.local_count}")
-        errors = MarkupResolver.resolve_markup(
-            vers_elem, self.text_str, self.siglum)
+            vers_elem.set(f"{{{NS['xml']}}}id", f"{self.vers_prefix}{self.local_count}")
+        vers_elem.set("n", f"{self.vers_prefix}{self.global_count}")
+        errors = MarkupResolver.resolve_markup(vers_elem, self.text_str, self.siglum)
         return vers_elem, errors
 
 
