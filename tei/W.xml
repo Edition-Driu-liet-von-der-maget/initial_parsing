@@ -11,8 +11,13 @@
          <publicationStmt>
             <p>Publication Information</p>
          </publicationStmt>
-         <sourceDesc>
-            <p>Information about the source</p>
+            <sourceDesc>
+               <p>Information about the source</p>
+               <msDesc xml:id="W">
+                  <msIdentifier>
+                     <idno type="siglum">W</idno>
+                  </msIdentifier>
+               </msDesc>
          </sourceDesc>
       </fileDesc>
   </teiHeader>
