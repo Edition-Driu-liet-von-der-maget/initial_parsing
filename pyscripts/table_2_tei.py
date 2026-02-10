@@ -27,6 +27,20 @@ if not Path(resolve_path_relative_to_script(csv_path)).is_file():
     csv_path = excel_to_csv(EXCEL_PATH)
 
 
+# Mapping from plain text sequences to Unicode ligature glyphs
+# Used to populate the <orig> element for generic ligatures when
+# no explicit ligature character was provided in the transcription.
+LIGATURE_GLYPHS = {
+    "ff": "\uFB00",   # ff ligature
+    "fi": "\uFB01",   # fi ligature
+    "fl": "\uFB02",   # fl ligature
+    "ffi": "\uFB03",  # ffi ligature
+    "ffl": "\uFB04",  # ffl ligature
+    "ft": "\uFB05",   # ft ligature
+    "st": "\uFB06",   # st ligature
+}
+
+
 def log_markup_issue(log_path: Path, witness_siglum: str, verse: "Vers", message: str):
     logging.error(
         "%s\t%s\t\t%s\t%s",
@@ -294,7 +308,9 @@ class MarkupResolver:
             case "lig":
                 tei_choice = tei("choice", {"type": "ligature"})
                 abbr = tei_sub(tei_choice, "orig")
-                abbr.text = text
+                # If we know a dedicated ligature glyph for this sequence,
+                # put it into <orig>; otherwise fall back to the plain text.
+                abbr.text = LIGATURE_GLYPHS.get(text, text)
                 reg = tei_sub(tei_choice, "reg")
                 reg.text = text
                 return tei_choice
