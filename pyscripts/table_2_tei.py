@@ -208,8 +208,6 @@ class MarkupResolver:
     def translate_to_tei(element: etree._Element, siglum: str):
         macron = "\u0304"
         unterlänge_strich = "\uA751"
-        is_end_of_word = bool(element.tail)
-        previous_text = ""
         siglum = ""
         if element is None:
             return None
@@ -236,14 +234,15 @@ class MarkupResolver:
                     abbr.text = "m" + macron
                 elif text in ["mm,", "nn"]:
                     abbr.text = text[0] + macron
-                elif text in ["an", "am", "en", "em", "im", "in", "om", "on", "un", "um"]:
+                elif text in ["an", "am", "en", "em", "im", "in", "om", "omi", "on", "un", "um"]:
                     if siglum == "A":
                         prev_char = MarkupResolver.clip_previous_text(element)
                         tei_choice = tei("choice", {"type": "superscript"})
                         abbr = tei_sub(tei_choice, "abbr")
-                        abbr.text = prev_char
                         hi = tei_sub(abbr, "hi", {"rend": "superscript"})
                         hi.text = "n"
+                        abbr.append(hi)
+                        abbr.text = prev_char
                         expan = tei_sub(tei_choice, "expan")
                         expan.text = text
                         return tei_choice
@@ -434,9 +433,20 @@ class Witness:
         self.local_verses = 0
         self.load_template()
         self.add_title()
+        self.add_siglum_to_header()
         self.global_verse_count = 0
 
-
+    def add_siglum_to_header(self):
+        idno_elem = self.root.find(".//tei:msDesc/tei:msIdentifier/tei:idno[@type='siglum']", namespaces=NS)
+        if idno_elem is not None:
+            idno_elem.text = self.siglum
+        else:
+            print(f"Warning: Could not find header element for siglum in witness {self.siglum}")
+        # msDesc xml:id="" should be set to siglum as well for better referencing, but since it's not used in the current processing, it's not critical if it's missing. If needed, it can be added similarly to the idno element.
+        msdesc_elem = self.root.find(".//tei:msDesc", namespaces=NS)
+        if msdesc_elem is not None:
+            msdesc_elem.set(f"{{{NS['xml']}}}id", self.siglum)
+    
     def add_structure(self):
         reversed_section_marks = reversed(
             self.root.xpath(
