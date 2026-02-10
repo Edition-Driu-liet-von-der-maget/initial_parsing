@@ -180,24 +180,27 @@ class MarkupResolver:
                     parent.text = ""
                     return text
                 else:
+                    clipped = parent.text[-1]
                     parent.text = parent.text[:-1]
-                    return parent.text[-1]
+                    return clipped
         if previous_elem.tail:
             if len(previous_elem.tail) == 1:
                 text = previous_elem.tail
                 previous_elem.tail = ""
                 return text
             else:
+                clipped = previous_elem.tail[-1]
                 previous_elem.tail = previous_elem.tail[:-1]
-                return previous_elem.tail[-1]
+                return clipped
         elif previous_elem.text:
             if len(previous_elem.text) == 1:
                 text = previous_elem.text
                 previous_elem.text = ""
                 return text
             else:
+                clipped = previous_elem.text[-1]
                 previous_elem.text = previous_elem.text[:-1]
-                return previous_elem.text[-1]
+                return clipped
         raise ValueError(
             f"No previous text found to clip: {etree.tostring(element)}")
 
