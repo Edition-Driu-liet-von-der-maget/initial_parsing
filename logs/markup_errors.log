@@ -1,34 +1,8 @@
-ERROR	D	   474		unbalanced markup: number of '#' and '+' does not match	daz ioach#aim #lde+r ir man genant
-ERROR	D	   474		nested markup detected	daz ioach#aim #lde+r ir man genant
-ERROR	D	   742		unbalanced markup: number of '#' and '+' does not match	noh liep mit kinde ge#^wnne
-ERROR	D	   849		unbalanced markup: number of '#' and '+' does not match	#avnd leit ez uf einen ſtêin 
 ERROR	D	  1098		nested markup detected	nu wart #z#sov+h+ #d?+ en#f22r+pfolhen ſa
 ERROR	D	  1098		Unknown markup tag '+ ' detected in nu wart #z#sov+h+ #d?+ en#f22r+pfolhen ſa	nu wart #z#sov+h+ #d?+ en#f22r+pfolhen ſa
 ERROR	A	   126		nested markup detected	swaz #rMath#aeu+s+ d#aer+ frone bot
 ERROR	A	   126		Unknown markup tag '+ ' detected in swaz #rMath#aeu+s+ d#aer+ frone bot	swaz #rMath#aeu+s+ d#aer+ frone bot
 ERROR	A	   178		nested markup detected	#rMath#aeu+s+ m#svo+z ez rechen
 ERROR	A	   178		Unknown markup tag '+ ' detected in #rMath#aeu+s+ m#svo+z ez rechen	#rMath#aeu+s+ m#svo+z ez rechen
-ERROR	A	   333		unbalanced markup: number of '#' and '+' does not match	anna daz sp#ari+chet gr#aati#a
-ERROR	A	   333		nested markup detected	anna daz sp#ari+chet gr#aati#a
-ERROR	A	  1355		unbalanced markup: number of '#' and '+' does not match	v#and ædel geſteine
-ERROR	A	  2260		closing '+' without matching '#'	rD+ie #dp+magede hab#aen+t ſich an ſey
-ERROR	A	  2260		unbalanced markup: number of '#' and '+' does not match	rD+ie #dp+magede hab#aen+t ſich an ſey
-ERROR	A	  2260		Unknown markup tag '+i' detected in rD+ie #dp+magede hab#aen+t ſich an ſey	rD+ie #dp+magede hab#aen+t ſich an ſey
-ERROR	A	  2573		unbalanced markup: number of '#' and '+' does not match	v#and+ imm#aer+ æwichlichen phlegen AMEN #rdaz iſt daz and#aer+
-ERROR	A	  2573		nested markup detected	v#and+ imm#aer+ æwichlichen phlegen AMEN #rdaz iſt daz and#aer+
-ERROR	A	  3344		unbalanced markup: number of '#' and '+' does not match	#rR+ache#l hiez div aine
-ERROR	C	   882		unbalanced markup: number of '#' and '+' does not match	'ia d''hub si … // #f??  /C3 inkeinen zorn'
-ERROR	C	   928		unbalanced markup: number of '#' and '+' does not match	#f??? [...] da#?z+ ſi got gnediclichen
-ERROR	C	   928		nested markup detected	#f??? [...] da#?z+ ſi got gnediclichen
-ERROR	C	  2320		unbalanced markup: number of '#' and '+' does not match	#f1r [...]vnd mit ſtangen
-ERROR	E	    13		Unknown markup tag '#e' detected in v#and+ mit da#er+ herſchefte	v#and+ mit da#er+ herſchefte
-ERROR	F	    25		unbalanced markup: number of '#' and '+' does not match	hirte u#and lebendigez brot
+ERROR	A	  2573		nested markup detected	v#and+ imm#aer+ æwichlichen phlegen AMEN #rdaz iſt daz and#aer++
 ERROR	F	    84		nested markup detected	#rMath#aeu+s ewag#aeli+ſte+
-ERROR	W	    41		Unknown markup tag '#1' detected in #1v/1+ da emphaheter di uer worhten	#1v/1+ da emphaheter di uer worhten
-ERROR	W	    45		Unknown markup tag '#1' detected in #1v/3+ alſo ſolten flieſen	#1v/3+ alſo ſolten flieſen
-ERROR	W	    64		Unknown markup tag '#1' detected in #1v/9+ […] andreſiender ſin	#1v/9+ […] andreſiender ſin
-ERROR	W	    71		Unknown markup tag '#1' detected in den #1v/11+ ſin eigenen diu gebirt	den #1v/11+ ſin eigenen diu gebirt
-ERROR	W	   143		unbalanced markup: number of '#' and '+' does not match	ſo ſi gewinn#aen+t #f2v/8 diu kint
-ERROR	W	   151		Unknown markup tag '#2' detected in daz #2v/10+ ſi niht enſwa[…]	daz #2v/10+ ſi niht enſwa[…]
-ERROR	W	   155		Unknown markup tag '#2' detected in ir en moh#2v/11+te nimmer widerwegen	ir en moh#2v/11+te nimmer widerwegen
-ERROR	W	   158		Unknown markup tag '#2' detected in do ſi got ſo be#2v/12+dahte	do ſi got ſo be#2v/12+dahte
