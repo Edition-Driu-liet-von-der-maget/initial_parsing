@@ -21,6 +21,20 @@ NS = {
 }
 LOG_FILE = "../logs/markup_errors.log"
 EXCEL_PATH = "../data/Transkription.xlsx"
+SUPPORTED_TAGS = {
+    "s": "sup",  # Superscript
+    "a": "abbr",  # Abkürzung
+    "d": "del",  # gelöscht
+    "z": "add",  # Zusatz
+    "l": "lig",  # Ligatur (Platzhalter)
+    "r": "rub",  # Rubrizierung
+    "f": "pb",  # Seitenwechsel
+    "?": "unclear",  # unklar
+    "^": "zirkumflex",  # circumflex-Marker
+    "&": "et",  # et-Ligatur
+    "i": "lombard",  # Lombarde
+    "I": "initial",  # Initiale
+}
 csv_path = ""
 # check if csv exists, else convert from excel
 if not Path(resolve_path_relative_to_script(csv_path)).is_file():
@@ -31,13 +45,13 @@ if not Path(resolve_path_relative_to_script(csv_path)).is_file():
 # Used to populate the <orig> element for generic ligatures when
 # no explicit ligature character was provided in the transcription.
 LIGATURE_GLYPHS = {
-    "ff": "\uFB00",   # ff ligature
-    "fi": "\uFB01",   # fi ligature
-    "fl": "\uFB02",   # fl ligature
-    "ffi": "\uFB03",  # ffi ligature
-    "ffl": "\uFB04",  # ffl ligature
-    "ft": "\uFB05",   # ft ligature
-    "st": "\uFB06",   # st ligature
+    "ff": "\ufb00",  # ff ligature
+    "fi": "\ufb01",  # fi ligature
+    "fl": "\ufb02",  # fl ligature
+    "ffi": "\ufb03",  # ffi ligature
+    "ffl": "\ufb04",  # ffl ligature
+    "ft": "\ufb05",  # ft ligature
+    "st": "\ufb06",  # st ligature
 }
 
 
@@ -68,44 +82,19 @@ def tei_sub(parent, tag, attributes={}):
 
 
 class MarkupResolver:
-    tagchars = [
-        "s",
-        "a",
-        "d",
-        "z",
-        "l",
-        "r",
-        "f",
-        "?",
-        "^",
-        "&",
-        "i",
-    ]
+    tagchars = list(SUPPORTED_TAGS.keys())
     tag_delims = ["#", "+"]
 
     @staticmethod
     def find_unclosed_markup(markup_str: str):
-        # find all opening tags
+        # find all opening tags; '+' is always a closer (no auto-correction)
         open_tags = re.findall(
-            r"#([" + "".join(MarkupResolver.tagchars) + "])", markup_str
+            r"#([" + re.escape("".join(MarkupResolver.tagchars)) + "])", markup_str
         )
         close_tags = re.findall(r"(\+)", markup_str)
         if len(open_tags) != len(close_tags):
-            # replace cases in which a + is used instead of #
-            new_markup_str = re.sub(
-                r"\+([" + "".join(MarkupResolver.tagchars) + "])",
-                r"#\1",
-                markup_str,
-                count=1,
-            )
-            if new_markup_str != markup_str:
-                print(
-                    f"Corrected markup string from:\n{markup_str}\nto:\n{new_markup_str}\n"
-                )
-                return MarkupResolver.find_unclosed_markup(new_markup_str)
-        else:
-            return MarkupResolver.find_nested_markup(markup_str)
-        return False
+            return False
+        return MarkupResolver.find_nested_markup(markup_str)
 
     @staticmethod
     def find_nested_markup(markup_str: str):
@@ -126,48 +115,25 @@ class MarkupResolver:
         errors: list[str] = []
         depth = 0
         for ch in markup_str:
-            if depth > 1:
-                errors.append("nested markup detected")
             if ch == "#":
                 depth += 1
             elif ch == "+":
                 if depth == 0:
                     errors.append("closing '+' without matching '#'")
-                depth -= 1
+                else:
+                    depth -= 1
         if depth != 0:
-            errors.append(
-                "unbalanced markup: number of '#' and '+' does not match")
+            errors.append("unbalanced markup: number of '#' and '+' does not match")
         return set(errors)
 
     @staticmethod
     def get_element_from_tag(tag: str):
-        match tag:
-            case "#s":
-                return tei("sup")  # Superskripte
-            case "#a":
-                return tei("abbr")  # abbreviation
-            case "#d":
-                return tei("del")  # gelöscht
-            case "#z":
-                return tei("add")  # Zusatz
-            case "#l":
-                return tei("lig")  # de-Ligatur
-            case "#r":
-                return tei("rub")  # Rubrizierungen
-            case "#f":
-                return tei("pb")  # Seitenwechsel
-            case "#?":
-                return tei("unclear")  # unclear
-            case "#I":
-                return tei("initial")  # initial
-            case "#i":
-                return tei("lombard")  # lombard
-            case "#^":
-                return tei("zirkumflex")  # supplied -> informatives Markup
-            case "#&":
-                return tei("et")  # et-ligature
-            case _:
-                return tei("wrong_markup")  # unbekanntes Markup
+        # erwartet Tag wie "#a"
+        if not tag.startswith("#") or len(tag) != 2:
+            return tei("wrong_markup")
+        key = tag[1]
+        tei_tag = SUPPORTED_TAGS.get(key)
+        return tei(tei_tag) if tei_tag else tei("wrong_markup")
 
     @staticmethod
     def clip_previous_text(element: etree._Element):
@@ -201,14 +167,12 @@ class MarkupResolver:
                 clipped = previous_elem.text[-1]
                 previous_elem.text = previous_elem.text[:-1]
                 return clipped
-        raise ValueError(
-            f"No previous text found to clip: {etree.tostring(element)}")
+        raise ValueError(f"No previous text found to clip: {etree.tostring(element)}")
 
     @staticmethod
-    def translate_to_tei(element: etree._Element, siglum: str):
+    def translate_to_tei(element: etree._Element, siglum: str = ""):
         macron = "\u0304"
-        unterlänge_strich = "\uA751"
-        siglum = ""
+        unterlänge_strich = "\ua751"
         if element is None:
             return None
         tag_name = etree.QName(element).localname
@@ -232,9 +196,21 @@ class MarkupResolver:
                     abbr.text = "e" + macron
                 elif text in ["men", "nem"]:
                     abbr.text = "m" + macron
-                elif text in ["mm,", "nn"]:
+                elif text in ["mm", "nn"]:
                     abbr.text = text[0] + macron
-                elif text in ["an", "am", "en", "em", "im", "in", "om", "omi", "on", "un", "um"]:
+                elif text in [
+                    "an",
+                    "am",
+                    "en",
+                    "em",
+                    "im",
+                    "in",
+                    "om",
+                    "omi",
+                    "on",
+                    "un",
+                    "um",
+                ]:
                     if siglum == "A":
                         prev_char = MarkupResolver.clip_previous_text(element)
                         tei_choice = tei("choice", {"type": "superscript"})
@@ -267,7 +243,7 @@ class MarkupResolver:
                     # p mit strich durch die Unterlänge
                     abbr.text = "p" + unterlänge_strich
                 elif text == "rum":
-                    abbr.text = "r+" + "\uA75B"
+                    abbr.text = "r+" + "\ua75b"
                 elif text in ["den", "dem", "dan"]:
                     abbr.text = "d" + macron
                 elif text in ["ben", "hem", "ham", "len", "lem"]:
@@ -290,7 +266,7 @@ class MarkupResolver:
                 elif text == "ra":
                     # superscript, vorrausgehenden buchstaben identifizieren und superscript "°" setzen
                     prev_char = MarkupResolver.clip_previous_text(element)
-                    abbr.text = prev_char + "\u030A"
+                    abbr.text = prev_char + "\u030a"
                 elif text == "us":
                     # vorrausgehenden buchstaben identifizieren und danach "halbes herz" setzen
                     prev_char = MarkupResolver.clip_previous_text(element)
@@ -304,9 +280,13 @@ class MarkupResolver:
                     abbr.text = text
                 return tei_choice
             case "del":
-                pass
+                tei_del = tei("del")
+                tei_del.text = text
+                return tei_del
             case "add":
-                pass
+                tei_add = tei("add")
+                tei_add.text = text
+                return tei_add
             case "lig":
                 tei_choice = tei("choice", {"type": "ligature"})
                 abbr = tei_sub(tei_choice, "orig")
@@ -321,11 +301,17 @@ class MarkupResolver:
                 tei_hi.text = text
                 return tei_hi
             case "pb":
-                pass
+                # erlaubt: #f12r+ -> <pb n="12r"/>
+                attrs = {"n": text} if text and text.strip() else {}
+                return tei("pb", attrs)
             case "unclear":
-                pass
+                tei_unclear = tei("unclear")
+                tei_unclear.text = text
+                return tei_unclear
             case "zirkumflex":
-                pass
+                tei_hi = tei("hi", {"rend": "circumflex"})
+                tei_hi.text = text
+                return tei_hi
             case "et":
                 tei_choice = tei("choice", {"type": "et_ligature"})
                 abbr = tei_sub(tei_choice, "orig")
@@ -345,60 +331,79 @@ class MarkupResolver:
                 pass
         return None
 
+
     @staticmethod
     def resolve_markup(container: etree._Element, markup_str: str, siglum: str):
         errors = []
         i = 0
-        current_elem = None
+        stack: list[etree._Element] = []
+
+        def emit_text(char: str):
+            if not stack:
+                if len(container) == 0:
+                    container.text = (container.text or "") + char
+                else:
+                    last_elem = container[-1]
+                    last_elem.tail = (last_elem.tail or "") + char
+            else:
+                current = stack[-1]
+                if len(current) == 0:
+                    current.text = (current.text or "") + char
+                else:
+                    last_elem = current[-1]
+                    last_elem.tail = (last_elem.tail or "") + char
+
+        def close_current():
+            if not stack:
+                errors.append("closing '+' without matching '#'")
+                return
+            old_elem = stack.pop()
+            new_shiny_element = MarkupResolver.translate_to_tei(old_elem, siglum)
+            if new_shiny_element is not None:
+                new_shiny_element.tail = old_elem.tail
+                # preserve nested children that were already translated
+                for child in list(old_elem):
+                    new_shiny_element.append(child)
+                parent = old_elem.getparent()
+                if parent is not None:
+                    parent.replace(old_elem, new_shiny_element)
+
         while i < len(markup_str):
-            if (
-                markup_str[i] == "#" or (
-                    markup_str[i] == "+" and current_elem is None)
-            ) and i + 1 < len(markup_str):
-                tag = markup_str[i: i + 2]
+            if markup_str[i] == "#" and i + 1 < len(markup_str):
+                tag = markup_str[i : i + 2]
                 elem = MarkupResolver.get_element_from_tag(tag)
                 if "wrong_markup" in elem.tag:
-                    print(
-                        f"Warning: Unknown markup tag \n'{tag}' \ndetected in \n{markup_str}\n"
-                    )
-                    # must log these too!
                     errors.append(
-                        f"Unknown markup tag '{tag}' detected in {markup_str}")
-                container.append(elem)
-                current_elem = elem
+                        f"Unknown markup tag '{tag}' detected in {markup_str}"
+                    )
+                if stack:
+                    stack[-1].append(elem)
+                else:
+                    container.append(elem)
+                stack.append(elem)
                 i += 2
             elif markup_str[i] == "+":
-                # closes current element, time to convert it to actual TEI
-                if current_elem is not None:
-                    old_elem = current_elem
-                    # get previous char to decide on nasalstrich handling
-                    new_shiny_element = MarkupResolver.translate_to_tei(
-                        old_elem, siglum)
-                    if new_shiny_element is not None and old_elem is not None:
-                        new_shiny_element.tail = old_elem.tail
-                        parent = old_elem.getparent()
-                        if parent is not None:
-                            parent.replace(old_elem, new_shiny_element)
-                    current_elem = None
+                # '+' always closes the current open element
+                close_current()
                 i += 1
             else:
-                char = markup_str[i]
+                emit_text(markup_str[i])
                 i += 1
-                if current_elem is None:
-                    if len(container) == 0:
-                        container.text = (container.text or "") + char
-                    else:
-                        last_elem = container[-1]
-                        last_elem.tail = (last_elem.tail or "") + char
-                else:
-                    current_elem.text = (current_elem.text or "") + char
+
+        if stack:
+            errors.append("unclosed markup at end of verse")
+            while stack:
+                close_current()
+
         return errors
 
 
 class Vers:
     vers_prefix = "v"
 
-    def __init__(self, global_count: int, local_count: int, text_str: str, siglum: str = ""):
+    def __init__(
+        self, global_count: int, local_count: int, text_str: str, siglum: str = ""
+    ):
         self.global_count = global_count
         self.local_count = local_count
         self.text_str = text_str
@@ -413,11 +418,14 @@ class Vers:
     def to_tei(self):
         vers_elem = tei("l")
         if not self.local_count and not self.global_count:
-            raise ValueError("At least one of global_count or local_count must be provided")
+            raise ValueError(
+                "At least one of global_count or local_count must be provided"
+            )
         if self.local_count != "":
             vers_elem.set(f"{{{NS['xml']}}}id", f"{self.vers_prefix}{self.local_count}")
         vers_elem.set("n", f"{self.vers_prefix}{self.global_count}")
-        errors = MarkupResolver.resolve_markup(vers_elem, self.text_str, self.siglum)
+        markup_str = self.text_str
+        errors = MarkupResolver.resolve_markup(vers_elem, markup_str, self.siglum)
         return vers_elem, errors
 
 
@@ -437,16 +445,20 @@ class Witness:
         self.global_verse_count = 0
 
     def add_siglum_to_header(self):
-        idno_elem = self.root.find(".//tei:msDesc/tei:msIdentifier/tei:idno[@type='siglum']", namespaces=NS)
+        idno_elem = self.root.find(
+            ".//tei:msDesc/tei:msIdentifier/tei:idno[@type='siglum']", namespaces=NS
+        )
         if idno_elem is not None:
             idno_elem.text = self.siglum
         else:
-            print(f"Warning: Could not find header element for siglum in witness {self.siglum}")
+            print(
+                f"Warning: Could not find header element for siglum in witness {self.siglum}"
+            )
         # msDesc xml:id="" should be set to siglum as well for better referencing, but since it's not used in the current processing, it's not critical if it's missing. If needed, it can be added similarly to the idno element.
         msdesc_elem = self.root.find(".//tei:msDesc", namespaces=NS)
         if msdesc_elem is not None:
             msdesc_elem.set(f"{{{NS['xml']}}}id", self.siglum)
-    
+
     def add_structure(self):
         reversed_section_marks = reversed(
             self.root.xpath(
@@ -463,18 +475,25 @@ class Witness:
                 to_move = nex
                 nex = to_move.getnext()
                 lg_element.append(to_move)
-        initials_groups_reversed = reversed(self.root.xpath("tei:lg[@type='sub_group' and ./tei:l[./tei:hi[@rend='initial']]]", namespaces=NS))
+        # initials_groups_reversed = reversed(self.root.xpath("tei:lg[@type='sub_group' and ./tei:l[./tei:hi[@rend='initial']]]", namespaces=NS))
+        initials_groups_reversed = reversed(
+            self.container.xpath(
+                "tei:lg[@type='sub_group' and ./tei:l[./tei:hi[@rend='initial']]]",
+                namespaces=NS,
+            )
+        )
         for initial_group in initials_groups_reversed:
             lg_element = tei("lg", {"type": "group"})
             initial_group.addprevious(lg_element)
             lg_element.append(initial_group)
             nex = lg_element.getnext()
             # check if next is not another lg of type initial
-            while nex is not None and not (etree.QName(nex).localname == "lg" and nex.get("type") == "group"):
+            while nex is not None and not (
+                etree.QName(nex).localname == "lg" and nex.get("type") == "group"
+            ):
                 to_move = nex
                 nex = to_move.getnext()
                 lg_element.append(to_move)
-
 
     def add_title(self):
         title_elem = self.root.find(".//tei:title", namespaces=NS)
@@ -503,7 +522,7 @@ class Witness:
             global_count=self.global_verse_count,
             local_count=self.local_verses if not empty else "",
             text_str=vers,
-            siglum=self.siglum
+            siglum=self.siglum,
         )
         self.verses.append(vers)
 
