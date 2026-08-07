@@ -1,0 +1,119 @@
+{
+  "A": {
+    "type": "codex",
+    "country": "Österreich",
+    "city": "Wien",
+    "repository": "Österreichische Nationalbibliothek",
+    "signatures": [
+      "Cod. 2742*"
+    ],
+    "handschriftencensus_id": 1229,
+    "handschriftencensus_url": "https://www.handschriftencensus.de/1229",
+    "notes": "In der Vorlage steht 'Cod. 2742*'; das Sternchen ist vermutlich keine Signaturbestandteil."
+  },
+  "D": {
+    "type": "codex",
+    "country": "Polen",
+    "city": "Krakau",
+    "repository": "Biblioteka Jagiellońska",
+    "signatures": [
+      "Berol. mgo 109"
+    ],
+    "handschriftencensus_id": 1434,
+    "handschriftencensus_url": "https://www.handschriftencensus.de/1434"
+  },
+  "F": {
+    "type": "fragment",
+    "country": "Deutschland",
+    "city": "Augsburg",
+    "repository": "Staats- und Stadtbibliothek Augsburg",
+    "signatures": [
+      "Fragm. germ. 9"
+    ],
+    "handschriftencensus_id": 1433,
+    "handschriftencensus_url": "https://www.handschriftencensus.de/1433"
+  },
+  "C": {
+    "type": "fragment",
+    "parts": [
+      {
+        "country": "Polen",
+        "city": "Wrocław",
+        "repository": "Universitätsbibliothek Wrocław",
+        "signature": "Cod. I F 250a alegat (früher Akc. 1955/286)"
+      },
+      {
+        "country": "Deutschland",
+        "city": "Karlsruhe",
+        "repository": "Badische Landesbibliothek",
+        "signature": "Cod. St. Peter perg. 71 (ehem. Spiegel)"
+      },
+      {
+        "country": "Polen",
+        "city": "Krakau",
+        "repository": "Biblioteka Jagiellońska",
+        "signature": "Berol. mgq 1303 Nr. 11"
+      },
+      {
+        "country": "Deutschland",
+        "city": "München",
+        "repository": "Bayerische Staatsbibliothek",
+        "signature": "Cgm 5249/2b"
+      }
+    ],
+    "handschriftencensus_id": 2029,
+    "handschriftencensus_url": "https://www.handschriftencensus.de/2029"
+  },
+  "E": {
+    "type": "fragment",
+    "parts": [
+      {
+        "country": "Österreich",
+        "city": "Innsbruck",
+        "repository": "Tiroler Landesmuseum Ferdinandeum",
+        "signature": "Cod. FB 1519/IX"
+      },
+      {
+        "country": "Deutschland",
+        "city": "Nürnberg",
+        "repository": "Germanisches Nationalmuseum, Bibliothek",
+        "signature": "Hs. 18065"
+      }
+    ],
+    "handschriftencensus_id": 1388,
+    "handschriftencensus_url": "https://www.handschriftencensus.de/1388"
+  },
+  "W": {
+    "type": "fragment",
+    "country": "Österreich",
+    "city": "Klosterneuburg",
+    "repository": "Stiftsbibliothek Klosterneuburg",
+    "signatures": [
+      "Fragment 461/1–12"
+    ],
+    "handschriftencensus_id": 1612,
+    "handschriftencensus_url": "https://www.handschriftencensus.de/1612"
+  },
+  "B": {
+    "type": "fragment",
+    "country": "Deutschland",
+    "city": "München",
+    "repository": "Bayerische Staatsbibliothek",
+    "signatures": [
+      "Cgm 5249/2a"
+    ],
+    "handschriftencensus_id": 1179,
+    "handschriftencensus_url": "https://www.handschriftencensus.de/1179"
+  },
+  "G": {
+    "type": "fragment",
+    "country": "Deutschland",
+    "city": "München",
+    "repository": "Bayerische Staatsbibliothek",
+    "signatures": [
+      "Cgm 5249/2c"
+    ],
+    "handschriftencensus_id": 1179,
+    "handschriftencensus_url": "https://www.handschriftencensus.de/1179"
+  }
+}
