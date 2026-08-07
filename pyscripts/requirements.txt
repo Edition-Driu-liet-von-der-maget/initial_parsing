@@ -2,7 +2,7 @@
 #    uv export --no-hashes
 et-xmlfile==2.0.0
     # via openpyxl
-lxml==6.0.2
+lxml==6.1.0
     # via initial-parsing
 numpy==2.4.1
     # via pandas
