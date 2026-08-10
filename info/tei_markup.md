@@ -12,17 +12,17 @@ text to the corresponding TEI element.
 
 | Pseudo tag | Meaning (comment in code)              | Primary TEI element created                                  | Notes |
 |-----------:|----------------------------------------|--------------------------------------------------------------|-------|
-| `#s`       | Superskripte                           | `choice[@type='superscript']` with `abbr/hi[@rend='superscript']/expan` | Abbreviation where the last character is written in superscript. |
-| `#a`       | abbreviation                           | `choice[@type='abbreviation']` with `abbr` and `expan`       | Handles many abbreviation patterns; the visible mark is in `abbr`, the reading text in `expan`. |
+| `#s`       | Superskripte                           | `choice` with `abbr/hi[@rend='superscript']` + `expan`     | No custom `@type`; superscript form lives inside `abbr`. |
+| `#a`       | abbreviation                           | `choice` with `abbr` and `expan`                             | No custom `@type`. Visible mark in `abbr` (Unicode where known), reading in `expan`. |
 | `#d`       | gelöscht                               | `del`                                                        | Kept as a plain TEI `<del>` element with its text content. |
 | `#z`       | Zusatz                                 | `add`                                                        | Kept as a plain TEI `<add>` element with its text content. |
-| `#l`       | de-Ligatur                             | `choice[@type='ligature']` with `orig` and `reg`             | Both `orig` and `reg` currently contain the same text. |
-| `#r`       | Rubrizierungen                         | `hi[@rend='rubrication']`                                    | Used for rubricated text. |
+| `#l`       | de-Ligatur                             | `choice[@type='ligature']` with `orig` and `reg`             | Ligature glyph in `orig` when known; plain sequence in `reg`. |
+| `#r`       | Rubrizierungen                         | `hi[@rend='rubric']`                                         | Rubricated text. |
 | `#f`       | Seitenwechsel                          | `pb`                                                         | Page break marker. |
 | `#?`       | unclear                                | `unclear`                                                    | Kept as a plain TEI `<unclear>` element. |
-| `#I`       | initial                                | `hi[@rend='initial']`                                        | Marks decorated initials. |
-| `#i`       | lombard                                | `hi[@rend='lombard']`                                        | Marks lombard initials. |
-| `#^`       | zirkumflex / supplied                  | `zirkumflex`                                                 | Currently stays as a plain TEI `<zirkumflex>` element. |
+| `#I`       | initial                                | `c[@type='initial']`                                         | Decorated initial letter. |
+| `#i`       | lombard                                | `c[@type='lombard']`                                         | Lombard initial. |
+| `#^`       | Zirkumflex                             | `hi[@rend='circumflex']`                                     | Markup records circumflex; display text gets combining U+0302 except on â ê î ô û (e.g. `#^æ+`, `#^w+`, `#^v+`, `#^m+`). |
 | `#&`       | et-ligature                            | `choice[@type='et_ligature']` with `orig` and `reg`          | `orig` is `&`, `reg` is `et`. |
 
 Any other pseudo tag is turned into a `<wrong_markup>` TEI element
@@ -30,10 +30,10 @@ and a warning is logged.
 
 ### Behaviour of `#a` (abbreviations)
 
-For abbreviations, the script always creates
+For abbreviations, the script always creates a plain TEI
 
-- `choice[@type='abbreviation']`
-  - `abbr` – the written abbreviation sign (often base letter plus a combining mark or special glyph)
+- `choice`
+  - `abbr` – the written abbreviation sign (base letter plus combining mark or special Unicode glyph when known)
   - `expan` – the expanded reading
 
 The exact content of `abbr` depends on the abbreviated word (e.g.
@@ -54,7 +54,7 @@ elements in the TEI document:
     witness.
 - Sections based on decorated initials are grouped as:
   - `lg[@type='sub_group']` around sequences starting with an `l`
-    that contains `hi[@rend='initial' or @rend='lombard']`.
+    that contains `c[@type='initial' or @type='lombard']`.
   - `lg[@type='group']` grouping consecutive `lg[@type='sub_group']`
     blocks and the following verses.
 

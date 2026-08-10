@@ -55,6 +55,24 @@ LIGATURE_GLYPHS = {
     "st": "\ufb06",  # st ligature
 }
 
+# Vowels that already carry a circumflex; #^ does not add another mark.
+CIRCUMFLEX_ALREADY = set("âêîôûÂÊÎÔÛ")
+COMBINING_CIRCUMFLEX = "\u0302"
+
+
+def apply_circumflex_display(text: str | None) -> str:
+    """Display form for #^…+: add combining circumflex except on â ê î ô û."""
+    if not text:
+        return ""
+    out: list[str] = []
+    for ch in text:
+        out.append(ch)
+        if ch not in CIRCUMFLEX_ALREADY and not ch.isspace():
+            # Avoid stacking if a combining circumflex is already present next
+            # (handled by iterating base chars only from transcription text).
+            out.append(COMBINING_CIRCUMFLEX)
+    return "".join(out)
+
 
 def log_markup_issue(log_path: Path, witness_siglum: str, verse: "Vers", message: str):
     logging.error(
@@ -146,28 +164,28 @@ class MarkupResolver:
                     text = parent.text
                     parent.text = ""
                     return text
-                else:
-                    clipped = parent.text[-1]
-                    parent.text = parent.text[:-1]
-                    return clipped
+                clipped = parent.text[-1]
+                parent.text = parent.text[:-1]
+                return clipped
+            raise ValueError(
+                f"No previous text found to clip: {etree.tostring(element)}"
+            )
         if previous_elem.tail:
             if len(previous_elem.tail) == 1:
                 text = previous_elem.tail
                 previous_elem.tail = ""
                 return text
-            else:
-                clipped = previous_elem.tail[-1]
-                previous_elem.tail = previous_elem.tail[:-1]
-                return clipped
-        elif previous_elem.text:
+            clipped = previous_elem.tail[-1]
+            previous_elem.tail = previous_elem.tail[:-1]
+            return clipped
+        if previous_elem.text:
             if len(previous_elem.text) == 1:
                 text = previous_elem.text
                 previous_elem.text = ""
                 return text
-            else:
-                clipped = previous_elem.text[-1]
-                previous_elem.text = previous_elem.text[:-1]
-                return clipped
+            clipped = previous_elem.text[-1]
+            previous_elem.text = previous_elem.text[:-1]
+            return clipped
         raise ValueError(f"No previous text found to clip: {etree.tostring(element)}")
 
     @staticmethod
@@ -180,7 +198,8 @@ class MarkupResolver:
         text = element.text
         match tag_name:
             case "sup":
-                tei_choice = tei("choice", {"type": "superscript"})
+                # Standard TEI choice without custom @type; form is in abbr.
+                tei_choice = tei("choice")
                 abbr = tei_sub(tei_choice, "abbr")
                 abbr.text = text[0]
                 hi = tei_sub(abbr, "hi", {"rend": "superscript"})
@@ -189,7 +208,7 @@ class MarkupResolver:
                 expan.text = text
                 return tei_choice
             case "abbr":
-                tei_choice = tei("choice", {"type": "abbreviation"})
+                tei_choice = tei("choice")
                 abbr = tei_sub(tei_choice, "abbr")
                 expan = tei_sub(tei_choice, "expan")
                 expan.text = text
@@ -214,7 +233,7 @@ class MarkupResolver:
                 ]:
                     if siglum == "A":
                         prev_char = MarkupResolver.clip_previous_text(element)
-                        tei_choice = tei("choice", {"type": "superscript"})
+                        tei_choice = tei("choice")
                         abbr = tei_sub(tei_choice, "abbr")
                         hi = tei_sub(abbr, "hi", {"rend": "superscript"})
                         hi.text = "n"
@@ -230,9 +249,9 @@ class MarkupResolver:
                 elif text == "nd":
                     abbr.text = "n" + macron
                 elif text == "ri":
-                    # superscript, vorrausgehenden buchstaben identifizieren und superscript "i" setzen
+                    # superscript i on the preceding letter
                     prev_char = MarkupResolver.clip_previous_text(element)
-                    tei_choice = tei("choice", {"type": "superscript"})
+                    tei_choice = tei("choice")
                     abbr = tei_sub(tei_choice, "abbr")
                     abbr.text = prev_char
                     hi = tei_sub(abbr, "hi", {"rend": "superscript"})
@@ -241,18 +260,19 @@ class MarkupResolver:
                     expan.text = text
                     return tei_choice
                 elif text in ["per", "par"]:
-                    # p mit strich durch die Unterlänge
+                    # p with stroke through descender (U+A751)
                     abbr.text = "p" + unterlänge_strich
                 elif text == "rum":
-                    abbr.text = "r+" + "\ua75b"
+                    # r + rotunda r (U+A75B), not a literal '+'
+                    abbr.text = "r" + "\ua75b"
                 elif text in ["den", "dem", "dan"]:
                     abbr.text = "d" + macron
                 elif text in ["ben", "hem", "ham", "len", "lem"]:
                     abbr.text = text[0] + macron
                 elif text == "er":
-                    # superscript, vorrausgehenden buchstaben identifizieren und superscript "Supermanzeichen"setzen
+                    # superscript "er" mark shown as raised s on preceding letter
                     prev_char = MarkupResolver.clip_previous_text(element)
-                    tei_choice = tei("choice", {"type": "superscript"})
+                    tei_choice = tei("choice")
                     abbr = tei_sub(tei_choice, "abbr")
                     abbr.text = prev_char
                     hi = tei_sub(abbr, "hi", {"rend": "superscript"})
@@ -261,22 +281,17 @@ class MarkupResolver:
                     expan.text = text
                     return tei_choice
                 elif text == "ra":
-                    # superscript, vorrausgehenden buchstaben identifizieren und superscript "tilde" setzen
+                    # preceding letter + combining tilde (U+0303)
                     prev_char = MarkupResolver.clip_previous_text(element)
                     abbr.text = prev_char + "\u0303"
-                elif text == "ra":
-                    # superscript, vorrausgehenden buchstaben identifizieren und superscript "°" setzen
-                    prev_char = MarkupResolver.clip_previous_text(element)
-                    abbr.text = prev_char + "\u030a"
                 elif text == "us":
-                    # vorrausgehenden buchstaben identifizieren und danach "halbes herz" setzen
+                    # preceding letter + rotunda r / us-mark (U+A75B)
                     prev_char = MarkupResolver.clip_previous_text(element)
-                    # abbr.text = prev_char + "\ua770"
                     abbr.text = prev_char + "\ua75b"
                 elif text == "az":
-                    # vorrausgehenden buchstaben identifizieren und danach "c" setzen
+                    # preceding letter + combining ur above (U+1DD1)
                     prev_char = MarkupResolver.clip_previous_text(element)
-                    abbr.text = prev_char + " \u1dd1"
+                    abbr.text = prev_char + "\u1dd1"
                 else:
                     abbr.text = text
                 return tei_choice
@@ -298,7 +313,7 @@ class MarkupResolver:
                 reg.text = text
                 return tei_choice
             case "rub":
-                tei_hi = tei("hi", {"rend": "rubrication"})
+                tei_hi = tei("hi", {"rend": "rubric"})
                 tei_hi.text = text
                 return tei_hi
             case "pb":
@@ -310,8 +325,10 @@ class MarkupResolver:
                 tei_unclear.text = text
                 return tei_unclear
             case "zirkumflex":
+                # Keep circumflex presence in markup; display with combining
+                # circumflex except on letters that already are â ê î ô û.
                 tei_hi = tei("hi", {"rend": "circumflex"})
-                tei_hi.text = text
+                tei_hi.text = apply_circumflex_display(text)
                 return tei_hi
             case "et":
                 tei_choice = tei("choice", {"type": "et_ligature"})
@@ -321,13 +338,13 @@ class MarkupResolver:
                 reg.text = "et"
                 return tei_choice
             case "initial":
-                tei_hi = tei("hi", {"rend": "initial"})
-                tei_hi.text = text
-                return tei_hi
+                tei_c = tei("c", {"type": "initial"})
+                tei_c.text = text
+                return tei_c
             case "lombard":
-                tei_hi = tei("hi", {"rend": "lombard"})
-                tei_hi.text = text
-                return tei_hi
+                tei_c = tei("c", {"type": "lombard"})
+                tei_c.text = text
+                return tei_c
             case _:
                 pass
         return None
@@ -463,7 +480,7 @@ class Witness:
     def add_structure(self):
         reversed_section_marks = reversed(
             self.root.xpath(
-                ".//tei:l[./tei:hi[@rend='initial' or @rend='lombard']]",
+                ".//tei:l[./tei:c[@type='initial' or @type='lombard']]",
                 namespaces=NS,
             )
         )
@@ -476,10 +493,9 @@ class Witness:
                 to_move = nex
                 nex = to_move.getnext()
                 lg_element.append(to_move)
-        # initials_groups_reversed = reversed(self.root.xpath("tei:lg[@type='sub_group' and ./tei:l[./tei:hi[@rend='initial']]]", namespaces=NS))
         initials_groups_reversed = reversed(
             self.container.xpath(
-                "tei:lg[@type='sub_group' and ./tei:l[./tei:hi[@rend='initial']]]",
+                "tei:lg[@type='sub_group' and ./tei:l[./tei:c[@type='initial']]]",
                 namespaces=NS,
             )
         )
