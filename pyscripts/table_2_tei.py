@@ -12,6 +12,7 @@ from utils import (
     excel_to_csv,
     user_interaction_loop,
 )
+from enrich_tei_with_metadata import enrich_tei_files
 
 OUT_DIR = "../tei"
 TEMPLATE_PATH = "../templates/tei_template.xml"
@@ -590,3 +591,4 @@ def csv_to_tei(csv_file_path: str):
 if __name__ == "__main__":
     user_interaction_loop()
     csv_to_tei(csv_path)
+    enrich_tei_files()
