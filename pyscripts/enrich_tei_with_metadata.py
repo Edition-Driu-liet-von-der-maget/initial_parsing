@@ -232,7 +232,7 @@ def infer_siglum_from_file(tei_path: Path, root: etree._Element) -> str:
     return tei_path.stem
 
 
-def enrich_tei_files(metadata_path: str = "../metadata/witnesses", tei_dir: str = "../tei") -> tuple[int, int, list[str]]:
+def enrich_tei_files(metadata_path: str = "../metadata/witnesses.json", tei_dir: str = "../tei") -> tuple[int, int, list[str]]:
     metadata_file = resolve_path_relative_to_script(metadata_path)
     tei_folder = resolve_path_relative_to_script(tei_dir)
 
@@ -273,7 +273,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--metadata",
-        default="../metadata/witnesses",
+        default="../metadata/witnesses.json",
         help="Path to witness metadata JSON (relative to this script or absolute).",
     )
     parser.add_argument(
