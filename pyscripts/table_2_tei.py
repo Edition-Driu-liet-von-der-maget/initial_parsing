@@ -523,6 +523,42 @@ class Witness:
         title_elem = self.root.find(".//tei:title", namespaces=NS)
         title_elem.text = f"{self.siglum} (Zeuge)"
 
+    @staticmethod
+    def add_gaps(vers_elem: etree._Element):
+        # gaps are represented as string […] or [...] in the text, and should be converted to <gap> elements in TEI.
+        print(etree.tostring(vers_elem, pretty_print=True, encoding="unicode"))
+        gap_strings = vers_elem.xpath(".//text()[contains(., '[…]') or contains(., '[...]')]")
+        for gap_str in gap_strings:
+            parent = gap_str.getparent()
+            split_list = re.split(r"(\[…\]|\[...\])", gap_str)
+            last_gap = None
+            if gap_str.is_text:
+                parent.text = ""
+                for part in split_list[1:]:
+                    if part in ["[…]", "[...]"]:
+                        gap_elem = tei("gap", {"reason": "illegible"})
+                        parent.insert(0, gap_elem)
+                        last_gap = gap_elem
+                    else:
+                        last_gap.tail = part
+                parent.text = split_list[0]
+            elif gap_str.is_tail:
+                parent.tail = ""
+                for part in split_list[1:]:
+                    if part in ["[…]", "[...]"]:
+                        gap_elem = tei("gap", {"reason": "illegible"})
+                        parent.addnext(gap_elem)
+                        last_gap = gap_elem
+                    else:
+                        last_gap.tail = part if last_gap is not None else ""
+                    parent.tail = split_list[0]
+            else:
+                logging.warning(
+                    f"Could not find parent for gap string in verse {etree.tostring(vers_elem)}"
+                )
+        if gap_strings:
+            input(etree.tostring(vers_elem, pretty_print=True, encoding="unicode"))
+
     def parse_verses(self):
         for verse in self.verses:
             verse: Vers
@@ -533,7 +569,9 @@ class Witness:
             vers_elem, errors = verse.to_tei()
             for err in errors:
                 log_markup_issue(Path(LOG_FILE), self.siglum, verse, err)
+            self.add_gaps(vers_elem)
             self.container.append(vers_elem)
+
 
     def append_vers_str(self, vers: str):
         self.global_verse_count += 1
