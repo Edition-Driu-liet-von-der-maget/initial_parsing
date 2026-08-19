@@ -144,7 +144,8 @@ class MarkupResolver:
                 else:
                     depth -= 1
         if depth != 0:
-            errors.append("unbalanced markup: number of '#' and '+' does not match")
+            errors.append(
+                "unbalanced markup: number of '#' and '+' does not match")
         return set(errors)
 
     @staticmethod
@@ -188,7 +189,8 @@ class MarkupResolver:
             clipped = previous_elem.text[-1]
             previous_elem.text = previous_elem.text[:-1]
             return clipped
-        raise ValueError(f"No previous text found to clip: {etree.tostring(element)}")
+        raise ValueError(
+            f"No previous text found to clip: {etree.tostring(element)}")
 
     @staticmethod
     def translate_to_tei(element: etree._Element, siglum: str = ""):
@@ -351,7 +353,6 @@ class MarkupResolver:
                 pass
         return None
 
-
     @staticmethod
     def resolve_markup(container: etree._Element, markup_str: str, siglum: str):
         errors = []
@@ -378,7 +379,8 @@ class MarkupResolver:
                 errors.append("closing '+' without matching '#'")
                 return
             old_elem = stack.pop()
-            new_shiny_element = MarkupResolver.translate_to_tei(old_elem, siglum)
+            new_shiny_element = MarkupResolver.translate_to_tei(
+                old_elem, siglum)
             if new_shiny_element is not None:
                 new_shiny_element.tail = old_elem.tail
                 # preserve nested children that were already translated
@@ -390,7 +392,7 @@ class MarkupResolver:
 
         while i < len(markup_str):
             if markup_str[i] == "#" and i + 1 < len(markup_str):
-                tag = markup_str[i : i + 2]
+                tag = markup_str[i: i + 2]
                 elem = MarkupResolver.get_element_from_tag(tag)
                 if "wrong_markup" in elem.tag:
                     errors.append(
@@ -442,10 +444,12 @@ class Vers:
                 "At least one of global_count or local_count must be provided"
             )
         if self.local_count != "":
-            vers_elem.set(f"{{{NS['xml']}}}id", f"{self.vers_prefix}{self.local_count}")
+            vers_elem.set(f"{{{NS['xml']}}}id",
+                          f"{self.vers_prefix}{self.local_count}")
         vers_elem.set("n", f"{self.vers_prefix}{self.global_count}")
         markup_str = self.text_str
-        errors = MarkupResolver.resolve_markup(vers_elem, markup_str, self.siglum)
+        errors = MarkupResolver.resolve_markup(
+            vers_elem, markup_str, self.siglum)
         return vers_elem, errors
 
 
@@ -508,7 +512,8 @@ class Witness:
             nex = lg_element.getnext()
             # check if next is not another lg of type initial
             while nex is not None and not (
-                etree.QName(nex).localname == "lg" and nex.get("type") == "group"
+                etree.QName(nex).localname == "lg" and nex.get(
+                    "type") == "group"
             ):
                 to_move = nex
                 nex = to_move.getnext()
@@ -565,7 +570,8 @@ class Witness:
 
     def save_to_file(self):
         with open(self.file_path, "wb") as file:
-            print(f"Saving TEI file for witness {self.siglum} to {self.file_path}")
+            print(
+                f"Saving TEI file for witness {self.siglum} to {self.file_path}")
             self.tree.write(
                 file, encoding="utf-8", xml_declaration=True, pretty_print=True
             )
@@ -604,7 +610,7 @@ def csv_to_tei(csv_file_path: str):
         witness.parse_verses()
         witness.add_structure()
         witness.set_filename()
-        etree.indent(witness.tree, space="  ")
+        # etree.indent(witness.tree, space="  ")
         witness.save_to_file()
 
 
