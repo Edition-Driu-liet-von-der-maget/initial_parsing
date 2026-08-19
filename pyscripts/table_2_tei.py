@@ -526,7 +526,6 @@ class Witness:
     @staticmethod
     def add_gaps(vers_elem: etree._Element):
         # gaps are represented as string […] or [...] in the text, and should be converted to <gap> elements in TEI.
-        print(etree.tostring(vers_elem, pretty_print=True, encoding="unicode"))
         gap_strings = vers_elem.xpath(".//text()[contains(., '[…]') or contains(., '[...]')]")
         for gap_str in gap_strings:
             parent = gap_str.getparent()
@@ -556,8 +555,6 @@ class Witness:
                 logging.warning(
                     f"Could not find parent for gap string in verse {etree.tostring(vers_elem)}"
                 )
-        if gap_strings:
-            input(etree.tostring(vers_elem, pretty_print=True, encoding="unicode"))
 
     def parse_verses(self):
         for verse in self.verses:
