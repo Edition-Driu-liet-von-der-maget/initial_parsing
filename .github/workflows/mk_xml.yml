@@ -28,7 +28,7 @@ jobs:
       - name: generate initial xml files
         run: python3 ./pyscripts/table_2_tei.py
       - name: commit changes
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "fresh initially parsed xml files"
           commit_user_name: "github actions"
