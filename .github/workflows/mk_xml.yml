@@ -9,7 +9,6 @@ on:
     paths:
       - 'data/**'
 
-# Sets permissions of the GITHUB_TOKEN to allow committing changed files
 permissions:
   contents: write
   packages: write
@@ -17,7 +16,6 @@ permissions:
   id-token: write
 
 jobs:
-  # Single deploy job since we're just deploying
   deploy:
     environment:
       name: xml maker

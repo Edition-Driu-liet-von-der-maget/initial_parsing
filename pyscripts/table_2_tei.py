@@ -90,6 +90,8 @@ def tei(tag, attributes=None):
     if attributes:
         for key, value in attributes.items():
             elem.set(key, value)
+    if tag in ["l", "lg", "p"]:
+        elem.tail = "\n"
     return elem
 
 
@@ -563,6 +565,7 @@ class Witness:
 
     def save_to_file(self):
         with open(self.file_path, "wb") as file:
+            print(f"Saving TEI file for witness {self.siglum} to {self.file_path}")
             self.tree.write(
                 file, encoding="utf-8", xml_declaration=True, pretty_print=True
             )
@@ -601,6 +604,7 @@ def csv_to_tei(csv_file_path: str):
         witness.parse_verses()
         witness.add_structure()
         witness.set_filename()
+        etree.indent(witness.tree, space="  ")
         witness.save_to_file()
 
 
