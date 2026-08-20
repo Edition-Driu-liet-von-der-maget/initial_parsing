@@ -288,6 +288,10 @@ class MarkupResolver:
                     # preceding letter + combining tilde (U+0303)
                     prev_char = MarkupResolver.clip_previous_text(element)
                     abbr.text = prev_char + "\u0303"
+                elif text == "ro":
+                    # superscript, vorrausgehenden buchstaben identifizieren und superscript "°" setzen
+                    prev_char = MarkupResolver.clip_previous_text(element)
+                    abbr.text = prev_char + "\u030A"
                 elif text == "us":
                     # preceding letter + rotunda r / us-mark (U+A75B)
                     prev_char = MarkupResolver.clip_previous_text(element)

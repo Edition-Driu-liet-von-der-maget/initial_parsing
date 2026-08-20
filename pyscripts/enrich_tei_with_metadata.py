@@ -4,11 +4,9 @@ import argparse
 import json
 import re
 from pathlib import Path
-
 from lxml import etree
-
 from utils import resolve_path_relative_to_script
-
+from get_images_from_3if import get_info_json_urls, load_witnesses_json, get_manifest
 
 NS_TEI = "http://www.tei-c.org/ns/1.0"
 NS_XML = "http://www.w3.org/XML/1998/namespace"
@@ -23,7 +21,9 @@ def tei(tag: str, attrs: dict[str, str] | None = None) -> etree._Element:
     return elem
 
 
-def tei_sub(parent: etree._Element, tag: str, attrs: dict[str, str] | None = None) -> etree._Element:
+def tei_sub(
+    parent: etree._Element, tag: str, attrs: dict[str, str] | None = None
+) -> etree._Element:
     child = etree.SubElement(parent, f"{{{NS_TEI}}}{tag}")
     if attrs:
         for key, value in attrs.items():
@@ -56,7 +56,9 @@ def text_or_empty(value: object) -> str:
     return str(value).strip()
 
 
-def append_if_text(parent: etree._Element, tag: str, value: object, attrs: dict[str, str] | None = None) -> etree._Element | None:
+def append_if_text(
+    parent: etree._Element, tag: str, value: object, attrs: dict[str, str] | None = None
+) -> etree._Element | None:
     text = text_or_empty(value)
     if not text:
         return None
@@ -65,7 +67,9 @@ def append_if_text(parent: etree._Element, tag: str, value: object, attrs: dict[
     return child
 
 
-def build_ms_identifier(parent: etree._Element, siglum: str, witness: dict) -> etree._Element:
+def build_ms_identifier(
+    parent: etree._Element, siglum: str, witness: dict
+) -> etree._Element:
     ms_identifier = tei_sub(parent, "msIdentifier")
 
     append_if_text(ms_identifier, "country", witness.get("country"))
@@ -82,7 +86,12 @@ def build_ms_identifier(parent: etree._Element, siglum: str, witness: dict) -> e
     if hc_id is not None:
         append_if_text(ms_identifier, "idno", hc_id, {"type": "handschriftencensus_id"})
 
-    append_if_text(ms_identifier, "idno", witness.get("handschriftencensus_url"), {"type": "handschriftencensus_url"})
+    append_if_text(
+        ms_identifier,
+        "idno",
+        witness.get("handschriftencensus_url"),
+        {"type": "handschriftencensus_url"},
+    )
     return ms_identifier
 
 
@@ -121,7 +130,9 @@ def build_phys_desc(parent: etree._Element, witness: dict) -> etree._Element | N
 
     append_if_text(support, "p", codicology.get("extent"), {"type": "extent"})
     append_if_text(support, "p", codicology.get("leaf_size"), {"type": "leaf_size"})
-    append_if_text(support, "p", codicology.get("writing_area"), {"type": "writing_area"})
+    append_if_text(
+        support, "p", codicology.get("writing_area"), {"type": "writing_area"}
+    )
 
     columns = codicology.get("columns")
     lines_raw = codicology.get("lines_per_page")
@@ -140,7 +151,12 @@ def build_phys_desc(parent: etree._Element, witness: dict) -> etree._Element | N
         append_if_text(layout, "p", lines_raw, {"type": "lines_per_page"})
         append_if_text(layout, "p", verse_layout, {"type": "verse_layout"})
         if features:
-            append_if_text(layout, "p", "; ".join(str(item) for item in features), {"type": "features"})
+            append_if_text(
+                layout,
+                "p",
+                "; ".join(str(item) for item in features),
+                {"type": "features"},
+            )
 
     return phys_desc
 
@@ -185,7 +201,9 @@ def build_parts(parent: etree._Element, witness: dict) -> None:
         append_if_text(part_identifier, "country", part.get("country"))
         append_if_text(part_identifier, "settlement", part.get("city"))
         append_if_text(part_identifier, "repository", part.get("repository"))
-        append_if_text(part_identifier, "idno", part.get("signature"), {"type": "signature"})
+        append_if_text(
+            part_identifier, "idno", part.get("signature"), {"type": "signature"}
+        )
 
         former_locations = part.get("former_locations", [])
         if former_locations:
@@ -204,7 +222,9 @@ def build_parts(parent: etree._Element, witness: dict) -> None:
 
 
 def replace_ms_desc(root: etree._Element, siglum: str, witness: dict) -> bool:
-    source_desc = root.find(".//tei:teiHeader/tei:fileDesc/tei:sourceDesc", namespaces=NS)
+    source_desc = root.find(
+        ".//tei:teiHeader/tei:fileDesc/tei:sourceDesc", namespaces=NS
+    )
     if source_desc is None:
         return False
 
@@ -226,13 +246,28 @@ def replace_ms_desc(root: etree._Element, siglum: str, witness: dict) -> bool:
 
 
 def infer_siglum_from_file(tei_path: Path, root: etree._Element) -> str:
-    by_idno = root.find(".//tei:sourceDesc/tei:msDesc/tei:msIdentifier/tei:idno[@type='siglum']", namespaces=NS)
+    by_idno = root.find(
+        ".//tei:sourceDesc/tei:msDesc/tei:msIdentifier/tei:idno[@type='siglum']",
+        namespaces=NS,
+    )
     if by_idno is not None and by_idno.text and by_idno.text.strip():
         return by_idno.text.strip()
     return tei_path.stem
 
 
-def enrich_tei_files(metadata_path: str = "../metadata/witnesses.json", tei_dir: str = "../tei") -> tuple[int, int, list[str]]:
+def get_facsimile_element(urls):
+    facsimile = etree.Element(f"{{{NS_TEI}}}facsimile")
+    for i, url in enumerate(urls, start=1):
+        surface = etree.SubElement(
+            facsimile, f"{{{NS_TEI}}}surface", {f"{{{NS_XML}}}id": f"facs_{i}"}
+        )
+        etree.SubElement(surface, f"{{{NS_TEI}}}graphic", url=url)
+    return facsimile
+
+
+def enrich_tei_files(
+    metadata_path: str = "../metadata/witnesses.json", tei_dir: str = "../tei"
+) -> tuple[int, int, list[str]]:
     metadata_file = resolve_path_relative_to_script(metadata_path)
     tei_folder = resolve_path_relative_to_script(tei_dir)
 
@@ -254,15 +289,26 @@ def enrich_tei_files(metadata_path: str = "../metadata/witnesses.json", tei_dir:
             missing.append(siglum)
             continue
 
-        changed = replace_ms_desc(root, siglum, witness)
-        if changed:
-            tree.write(
-                str(tei_file),
-                encoding="utf-8",
-                xml_declaration=True,
-                pretty_print=True,
+        replace_ms_desc(root, siglum, witness)
+
+        manifest_url = witness.get("IIIF_manifest", None)
+        if manifest_url is not None:
+            manifest  = get_manifest(manifest_url)
+            urls = get_info_json_urls(
+                manifest,
+                witness["first_scan"],
+                witness["last_scan"],
             )
-            updated += 1
+            facs_elem = get_facsimile_element(urls)
+            root.xpath(".//tei:teiHeader", namespaces=NS)[0].addnext(facs_elem)
+
+        tree.write(
+            str(tei_file),
+            encoding="utf-8",
+            xml_declaration=True,
+            pretty_print=True,
+        )
+        updated += 1
 
     return processed, updated, missing
 
@@ -282,7 +328,6 @@ def main() -> None:
         help="Directory containing TEI files to enrich.",
     )
     args = parser.parse_args()
-
     processed, updated, missing = enrich_tei_files(args.metadata, args.tei_dir)
     print(f"Processed TEI files: {processed}")
     print(f"Updated TEI files:   {updated}")

@@ -7,6 +7,9 @@
     "signatures": [
       "Cod. 2742*"
     ],
+    "IIIF_manifest": "https://api.onb.ac.at/iiif/presentation/v3/manifest/1003371B",
+    "first_scan": 23,
+    "last_scan": 154,
     "handschriftencensus_id": 1229,
     "handschriftencensus_url": "https://www.handschriftencensus.de/1229",
     "metadata": {
