@@ -1,0 +1,29 @@
+ERROR	D	  1445		closing '+' without matching '#'	#avnd+ daz ſie uor urſpriche+ 1445
+ERROR	D	  1445		closing '+' without matching '#'	#avnd+ daz ſie uor urſpriche+ 1445
+ERROR	D	  2069		Unknown markup tag '#3' detected in #37r+ aller herzen t#sov+gen	#37r+ aller herzen t#sov+gen
+ERROR	D	  2098		closing '+' without matching '#'	da belibe ich ſt^æ+tik an
+ERROR	D	  2098		closing '+' without matching '#'	da belibe ich ſt^æ+tik an
+ERROR	D	  3410		unbalanced markup: number of '#' and '+' does not match	hernah ſie #lde+s iehe#?lNt 3410
+ERROR	D	  3410		unclosed markup at end of verse	hernah ſie #lde+s iehe#?lNt 3410
+ERROR	D	  3779		unbalanced markup: number of '#' and '+' does not match	#lde+r abent begun#lde anegan 3780
+ERROR	D	  3779		unclosed markup at end of verse	#lde+r abent begun#lde anegan 3780
+ERROR	D	  3816		Unknown markup tag '#6' detected in #66v+ Div fr#sov+e entwêlen muſe	#66v+ Div fr#sov+e entwêlen muſe
+ERROR	D	  3934		unbalanced markup: number of '#' and '+' does not match	#ioſeph mit ſiner kiuſkeite 3935
+ERROR	D	  3934		unclosed markup at end of verse	#ioſeph mit ſiner kiuſkeite 3935
+ERROR	D	  4041		Unknown markup tag '#7' detected in #71r+ #iA+rmiv lîute nahen lagen	#71r+ #iA+rmiv lîute nahen lagen
+ERROR	D	  4368		unbalanced markup: number of '#' and '+' does not match	#avnd+ daz ſie #^wruen ſûne
+ERROR	D	  4368		unclosed markup at end of verse	#avnd+ daz ſie #^wruen ſûne
+ERROR	D	  4506		closing '+' without matching '#'	daz ſie in dem lan#lde+ w^æ+ren
+ERROR	D	  4506		closing '+' without matching '#'	daz ſie in dem lan#lde+ w^æ+ren
+ERROR	D	  4950		Unknown markup tag '#8' detected in #88v+ #iG+ot ſelbe wolte rechen	#88v+ #iG+ot ſelbe wolte rechen
+ERROR	C	   118		Unknown markup tag '#e' detected in in einer wuſte v#er+re	in einer wuſte v#er+re
+ERROR	C	   660		Unknown markup tag '#1' detected in di #12v/C2+ darinne waren	di #12v/C2+ darinne waren
+ERROR	C	   723		Unknown markup tag '#e' detected in #iN+#rv+ u#er+nemt diſe lere	#iN+#rv+ u#er+nemt diſe lere
+ERROR	C	  1028		Unknown markup tag '#e' detected in zu wa#er+tlich#aen+ dingen	zu wa#er+tlich#aen+ dingen
+ERROR	C	  1038		Unknown markup tag '#e' detected in tuwa#er+ vnd ſwere	tuwa#er+ vnd ſwere
+ERROR	C	  1202		Unknown markup tag '#e' detected in kein mut#aer+ gebirt nimma#er+ mer	kein mut#aer+ gebirt nimma#er+ mer
+ERROR	C	  1405		unbalanced markup: number of '#' and '+' does not match	zud#aer+ recht#aen hant inden rink
+ERROR	C	  1405		unclosed markup at end of verse	zud#aer+ recht#aen hant inden rink
+ERROR	C	  1503		Unknown markup tag '#e' detected in imm#aer+ habe ub#er+kumen	imm#aer+ habe ub#er+kumen
+ERROR	C	  1811		Unknown markup tag '#C' detected in vme den #C2/f39+ altar	vme den #C2/f39+ altar
+ERROR	C	  1816		Unknown markup tag '#e' detected in d[...] neigh d#aen+ heilig#en+ [...]	d[...] neigh d#aen+ heilig#en+ [...]
