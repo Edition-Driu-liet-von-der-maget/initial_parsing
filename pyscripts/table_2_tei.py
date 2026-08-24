@@ -192,6 +192,8 @@ class MarkupResolver:
             clipped = previous_elem.text[-1]
             previous_elem.text = previous_elem.text[:-1]
             return clipped
+        elif previous_elem.xpath("local-name() = 'gap' and @reason = 'illegible'"):
+            return ""
         else:
             raise ValueError(
                 f"No previous text found to clip: {etree.tostring(element)}, found previous element: {etree.tostring(previous_elem)}\n\nParent: {etree.tostring(element.getparent())},\n\n previous_elem tail = |{type(previous_elem.tail)}|, previous_elem text = {type(previous_elem.text)}"
@@ -434,15 +436,6 @@ class MarkupResolver:
                 else:
                     container.append(elem)
                 i += 3
-            elif markup_str[i] == "ſ":
-                elem = tei("choice")
-                tei_sub(elem, "orig").text = "ſ"
-                tei_sub(elem, "corr").text = "s"
-                if stack:
-                    stack[-1].append(elem)
-                else:
-                    container.append(elem)
-                i += 1
             elif markup_str[i] == "+":
                 close_current()
                 i += 1
@@ -472,6 +465,64 @@ class Vers:
 
     def is_book_start(self):
         return False
+    
+    def tag_long_s(self, text: str) -> list:
+        content_list = []
+        for substring in re.split(r"(ſ)", text):
+            if substring == "ſ":
+                elem = tei("choice")
+                tei_sub(elem, "orig").text = "ſ"
+                tei_sub(elem, "corr").text = "s"
+                content_list.append(elem)
+            else:
+                content_list.append(substring)
+        return content_list
+
+    def tag_long_s_in_vers(self, tei_vers: etree._Element):
+        for s_textnode in tei_vers.xpath(".//text()[contains(., 'ſ')]"):
+            parent = s_textnode.getparent()
+            content_list = self.tag_long_s(s_textnode)
+            last_el = None
+            source_is_text_child = s_textnode.is_text
+            if source_is_text_child:
+                parent.text = ""
+            else:
+                parent.tail = ""
+            for content in content_list:
+                if isinstance(content, str):
+                    if last_el is None:
+                        if source_is_text_child:
+                            parent.text = content
+                        else:
+                            parent.tail = content
+                    else:
+                        last_el.tail = content
+                else:
+                    if last_el is None:
+                        if source_is_text_child:
+                            if len(parent) == 0:
+                                parent.append(content)
+                                last_el = content
+                            else:
+                                old_parent_text = parent.text
+                                parent.text = ""
+                                parent.insert(0, content)
+                                parent.text = old_parent_text
+                                last_el = content
+                        else: 
+                            last_el = parent
+                            old_tail = last_el.tail
+                            last_el.tail = ""
+                            last_el.addnext(content)
+                            last_el = content
+                            last_el.tail = old_tail
+                    else:
+                        old_tail = last_el.tail
+                        last_el.tail = ""
+                        last_el.addnext(content)
+                        last_el = content
+                        last_el.tail = old_tail
+
 
     def to_tei(self):
         vers_elem = tei("l")
@@ -484,6 +535,7 @@ class Vers:
         vers_elem.set("n", f"{self.vers_prefix}{self.global_count}")
         markup_str = self.text_str
         errors = MarkupResolver.resolve_markup(vers_elem, markup_str, self.siglum)
+        self.tag_long_s_in_vers(vers_elem)
         return vers_elem, errors
 
 
