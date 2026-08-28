@@ -87,6 +87,8 @@ def log_markup_issue(log_path: Path, witness_siglum: str, verse: "Vers", message
 # TEI element creation helpers
 def tei(tag, attributes=None):
     elem = etree.Element(f"{{{NS['tei']}}}{tag}")
+    # elem.text = ""
+    # elem.tail = ""
     if attributes:
         for key, value in attributes.items():
             elem.set(key, value)
@@ -96,7 +98,9 @@ def tei(tag, attributes=None):
 
 
 def tei_sub(parent, tag, attributes={}):
-    return etree.SubElement(parent, f"{{{NS['tei']}}}{tag}", attributes)
+    subel = tei(tag, attributes)
+    parent.append(subel)
+    return subel
 
 
 # Markup resolution
@@ -144,8 +148,7 @@ class MarkupResolver:
                 else:
                     depth -= 1
         if depth != 0:
-            errors.append(
-                "unbalanced markup: number of '#' and '+' does not match")
+            errors.append("unbalanced markup: number of '#' and '+' does not match")
         return set(errors)
 
     @staticmethod
@@ -189,8 +192,12 @@ class MarkupResolver:
             clipped = previous_elem.text[-1]
             previous_elem.text = previous_elem.text[:-1]
             return clipped
-        raise ValueError(
-            f"No previous text found to clip: {etree.tostring(element)}")
+        elif previous_elem.xpath("local-name() = 'gap' and @reason = 'illegible'"):
+            return ""
+        else:
+            raise ValueError(
+                f"No previous text found to clip: {etree.tostring(element)}, found previous element: {etree.tostring(previous_elem)}\n\nParent: {etree.tostring(element.getparent())},\n\n previous_elem tail = |{type(previous_elem.tail)}|, previous_elem text = {type(previous_elem.text)}"
+            )
 
     @staticmethod
     def translate_to_tei(element: etree._Element, siglum: str = ""):
@@ -288,6 +295,10 @@ class MarkupResolver:
                     # preceding letter + combining tilde (U+0303)
                     prev_char = MarkupResolver.clip_previous_text(element)
                     abbr.text = prev_char + "\u0303"
+                elif text == "ro":
+                    # superscript, vorrausgehenden buchstaben identifizieren und superscript "°" setzen
+                    prev_char = MarkupResolver.clip_previous_text(element)
+                    abbr.text = prev_char + "\u030a"
                 elif text == "us":
                     # preceding letter + rotunda r / us-mark (U+A75B)
                     prev_char = MarkupResolver.clip_previous_text(element)
@@ -379,8 +390,7 @@ class MarkupResolver:
                 errors.append("closing '+' without matching '#'")
                 return
             old_elem = stack.pop()
-            new_shiny_element = MarkupResolver.translate_to_tei(
-                old_elem, siglum)
+            new_shiny_element = MarkupResolver.translate_to_tei(old_elem, siglum)
             if new_shiny_element is not None:
                 new_shiny_element.tail = old_elem.tail
                 # preserve nested children that were already translated
@@ -392,7 +402,7 @@ class MarkupResolver:
 
         while i < len(markup_str):
             if markup_str[i] == "#" and i + 1 < len(markup_str):
-                tag = markup_str[i: i + 2]
+                tag = markup_str[i : i + 2]
                 elem = MarkupResolver.get_element_from_tag(tag)
                 if "wrong_markup" in elem.tag:
                     errors.append(
@@ -404,19 +414,38 @@ class MarkupResolver:
                     container.append(elem)
                 stack.append(elem)
                 i += 2
+            elif (
+                markup_str[i] == "["
+                and i + 5 < len(markup_str)
+                and markup_str[i : i + 5] == "[...]"
+            ):
+                elem = tei("gap", {"reason": "illegible", "agent": "damage"})
+                if stack:
+                    stack[-1].append(elem)
+                else:
+                    container.append(elem)
+                i += 5
+            elif (
+                markup_str[i] == "["
+                and i + 2 < len(markup_str)
+                and markup_str[i : i + 3] == "[…]"
+            ):
+                elem = tei("gap", {"reason": "illegible", "agent": "damage"})
+                if stack:
+                    stack[-1].append(elem)
+                else:
+                    container.append(elem)
+                i += 3
             elif markup_str[i] == "+":
-                # '+' always closes the current open element
                 close_current()
                 i += 1
             else:
                 emit_text(markup_str[i])
                 i += 1
-
         if stack:
             errors.append("unclosed markup at end of verse")
             while stack:
                 close_current()
-
         return errors
 
 
@@ -436,6 +465,64 @@ class Vers:
 
     def is_book_start(self):
         return False
+    
+    def tag_long_s(self, text: str) -> list:
+        content_list = []
+        for substring in re.split(r"(ſ)", text):
+            if substring == "ſ":
+                elem = tei("choice")
+                tei_sub(elem, "orig").text = "ſ"
+                tei_sub(elem, "corr").text = "s"
+                content_list.append(elem)
+            else:
+                content_list.append(substring)
+        return content_list
+
+    def tag_long_s_in_vers(self, tei_vers: etree._Element):
+        for s_textnode in tei_vers.xpath(".//text()[contains(., 'ſ')]"):
+            parent = s_textnode.getparent()
+            content_list = self.tag_long_s(s_textnode)
+            last_el = None
+            source_is_text_child = s_textnode.is_text
+            if source_is_text_child:
+                parent.text = ""
+            else:
+                parent.tail = ""
+            for content in content_list:
+                if isinstance(content, str):
+                    if last_el is None:
+                        if source_is_text_child:
+                            parent.text = content
+                        else:
+                            parent.tail = content
+                    else:
+                        last_el.tail = content
+                else:
+                    if last_el is None:
+                        if source_is_text_child:
+                            if len(parent) == 0:
+                                parent.append(content)
+                                last_el = content
+                            else:
+                                old_parent_text = parent.text
+                                parent.text = ""
+                                parent.insert(0, content)
+                                parent.text = old_parent_text
+                                last_el = content
+                        else: 
+                            last_el = parent
+                            old_tail = last_el.tail
+                            last_el.tail = ""
+                            last_el.addnext(content)
+                            last_el = content
+                            last_el.tail = old_tail
+                    else:
+                        old_tail = last_el.tail
+                        last_el.tail = ""
+                        last_el.addnext(content)
+                        last_el = content
+                        last_el.tail = old_tail
+
 
     def to_tei(self):
         vers_elem = tei("l")
@@ -444,12 +531,11 @@ class Vers:
                 "At least one of global_count or local_count must be provided"
             )
         if self.local_count != "":
-            vers_elem.set(f"{{{NS['xml']}}}id",
-                          f"{self.vers_prefix}{self.local_count}")
+            vers_elem.set(f"{{{NS['xml']}}}id", f"{self.vers_prefix}{self.local_count}")
         vers_elem.set("n", f"{self.vers_prefix}{self.global_count}")
         markup_str = self.text_str
-        errors = MarkupResolver.resolve_markup(
-            vers_elem, markup_str, self.siglum)
+        errors = MarkupResolver.resolve_markup(vers_elem, markup_str, self.siglum)
+        self.tag_long_s_in_vers(vers_elem)
         return vers_elem, errors
 
 
@@ -512,8 +598,7 @@ class Witness:
             nex = lg_element.getnext()
             # check if next is not another lg of type initial
             while nex is not None and not (
-                etree.QName(nex).localname == "lg" and nex.get(
-                    "type") == "group"
+                etree.QName(nex).localname == "lg" and nex.get("type") == "group"
             ):
                 to_move = nex
                 nex = to_move.getnext()
@@ -522,39 +607,6 @@ class Witness:
     def add_title(self):
         title_elem = self.root.find(".//tei:title", namespaces=NS)
         title_elem.text = f"{self.siglum} (Zeuge)"
-
-    @staticmethod
-    def add_gaps(vers_elem: etree._Element):
-        # gaps are represented as string […] or [...] in the text, and should be converted to <gap> elements in TEI.
-        gap_strings = vers_elem.xpath(".//text()[contains(., '[…]') or contains(., '[...]')]")
-        for gap_str in gap_strings:
-            parent = gap_str.getparent()
-            split_list = re.split(r"(\[…\]|\[...\])", gap_str)
-            last_gap = None
-            if gap_str.is_text:
-                parent.text = ""
-                for part in split_list[1:]:
-                    if part in ["[…]", "[...]"]:
-                        gap_elem = tei("gap", {"reason": "illegible"})
-                        parent.insert(0, gap_elem)
-                        last_gap = gap_elem
-                    else:
-                        last_gap.tail = part
-                parent.text = split_list[0]
-            elif gap_str.is_tail:
-                parent.tail = ""
-                for part in split_list[1:]:
-                    if part in ["[…]", "[...]"]:
-                        gap_elem = tei("gap", {"reason": "illegible"})
-                        parent.addnext(gap_elem)
-                        last_gap = gap_elem
-                    else:
-                        last_gap.tail = part if last_gap is not None else ""
-                    parent.tail = split_list[0]
-            else:
-                logging.warning(
-                    f"Could not find parent for gap string in verse {etree.tostring(vers_elem)}"
-                )
 
     def parse_verses(self):
         for verse in self.verses:
@@ -566,9 +618,7 @@ class Witness:
             vers_elem, errors = verse.to_tei()
             for err in errors:
                 log_markup_issue(Path(LOG_FILE), self.siglum, verse, err)
-            self.add_gaps(vers_elem)
             self.container.append(vers_elem)
-
 
     def append_vers_str(self, vers: str):
         self.global_verse_count += 1
@@ -605,8 +655,7 @@ class Witness:
 
     def save_to_file(self):
         with open(self.file_path, "wb") as file:
-            print(
-                f"Saving TEI file for witness {self.siglum} to {self.file_path}")
+            print(f"Saving TEI file for witness {self.siglum} to {self.file_path}")
             self.tree.write(
                 file, encoding="utf-8", xml_declaration=True, pretty_print=True
             )
@@ -645,7 +694,6 @@ def csv_to_tei(csv_file_path: str):
         witness.parse_verses()
         witness.add_structure()
         witness.set_filename()
-        # etree.indent(witness.tree, space="  ")
         witness.save_to_file()
 
 

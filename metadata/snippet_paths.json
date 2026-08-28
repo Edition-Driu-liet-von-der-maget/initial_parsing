@@ -1,0 +1,42 @@
+{
+    "1": {
+        "filepath": "witness_snippets/W.html",
+        "sorting": 800,
+        "title": "W"
+    },
+    "3": {
+        "filepath": "witness_snippets/F.html",
+        "sorting": 500,
+        "title": "F"
+    },
+    "4": {
+        "filepath": "witness_snippets/A.html",
+        "sorting": 200,
+        "title": "A"
+    },
+    "5": {
+        "filepath": "witness_snippets/C.html",
+        "sorting": 300,
+        "title": "C"
+    },
+    "6": {
+        "filepath": "witness_snippets/G.html",
+        "sorting": 600,
+        "title": "G"
+    },
+    "7": {
+        "filepath": "witness_snippets/E.html",
+        "sorting": 400,
+        "title": "E"
+    },
+    "8": {
+        "filepath": "witness_snippets/B.html",
+        "sorting": 250,
+        "title": "B"
+    },
+    "9": {
+        "filepath": "witness_snippets/D.html",
+        "sorting": 100,
+        "title": "D"
+    }
+}
