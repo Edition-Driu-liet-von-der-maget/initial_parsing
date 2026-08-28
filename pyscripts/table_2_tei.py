@@ -421,7 +421,7 @@ class MarkupResolver:
 
 
 class Vers:
-    vers_prefix = "v"
+    vers_prefix = "v_"
 
     def __init__(
         self, global_count: int, local_count: int, text_str: str, siglum: str = ""
