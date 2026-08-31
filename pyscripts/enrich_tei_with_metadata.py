@@ -255,13 +255,17 @@ def infer_siglum_from_file(tei_path: Path, root: etree._Element) -> str:
     return tei_path.stem
 
 
-def get_facsimile_element(urls):
+def get_facsimile_element(urls: list[str], pb_elements: list[etree._Element]):
     facsimile = etree.Element(f"{{{NS_TEI}}}facsimile")
     for i, url in enumerate(urls, start=1):
+        facs_id = f"facs_{i}"
         surface = etree.SubElement(
-            facsimile, f"{{{NS_TEI}}}surface", {f"{{{NS_XML}}}id": f"facs_{i}"}
+            facsimile, f"{{{NS_TEI}}}surface", {f"{{{NS_XML}}}id": facs_id}
         )
         etree.SubElement(surface, f"{{{NS_TEI}}}graphic", url=url)
+        if pb_elements:
+            current_pb_elem = pb_elements.pop(0)
+            current_pb_elem.attrib["facs"] = f"#{facs_id}"
     return facsimile
 
 
@@ -292,6 +296,7 @@ def enrich_tei_files(
         replace_ms_desc(root, siglum, witness)
 
         manifest_url = witness.get("IIIF_manifest", None)
+        pb_elements = root.xpath(".//tei:pb", namespaces=NS)
         if manifest_url is not None:
             manifest  = get_manifest(manifest_url)
             urls = get_info_json_urls(
@@ -299,8 +304,10 @@ def enrich_tei_files(
                 witness["first_scan"],
                 witness["last_scan"],
             )
-            facs_elem = get_facsimile_element(urls)
+            facs_elem = get_facsimile_element(urls, pb_elements)
             root.xpath(".//tei:teiHeader", namespaces=NS)[0].addnext(facs_elem)
+
+        
 
         tree.write(
             str(tei_file),
