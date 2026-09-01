@@ -479,50 +479,51 @@ class Vers:
         return content_list
 
     def tag_long_s_in_vers(self, tei_vers: etree._Element):
-        for s_textnode in tei_vers.xpath(".//text()[contains(., 'ſ')]"):
-            parent = s_textnode.getparent()
-            content_list = self.tag_long_s(s_textnode)
-            last_el = None
-            source_is_text_child = s_textnode.is_text
-            if source_is_text_child:
-                parent.text = ""
-            else:
-                parent.tail = ""
-            for content in content_list:
-                if isinstance(content, str):
-                    if last_el is None:
-                        if source_is_text_child:
-                            parent.text = content
-                        else:
-                            parent.tail = content
-                    else:
-                        last_el.tail = content
-                else:
-                    if last_el is None:
-                        if source_is_text_child:
-                            if len(parent) == 0:
-                                parent.append(content)
-                                last_el = content
-                            else:
-                                old_parent_text = parent.text
-                                parent.text = ""
-                                parent.insert(0, content)
-                                parent.text = old_parent_text
-                                last_el = content
-                        else: 
-                            last_el = parent
-                            old_tail = last_el.tail
-                            last_el.tail = ""
-                            last_el.addnext(content)
-                            last_el = content
-                            last_el.tail = old_tail
-                    else:
-                        old_tail = last_el.tail
-                        last_el.tail = ""
-                        last_el.addnext(content)
-                        last_el = content
-                        last_el.tail = old_tail
+        """Replace every bare 'ſ' text occurrence with <choice><orig>ſ</orig><corr>s</corr></choice>.
 
+        Important: collect text targets first, then rewrite each as
+        leading_text + (element, tail)* so multiple ſ in one node keep order
+        and never overwrite earlier tails.
+        """
+        targets: list[tuple[etree._Element, bool, str]] = []
+        for textnode in tei_vers.xpath(".//text()[contains(., 'ſ')]"):
+            parent = textnode.getparent()
+            if parent is None:
+                continue
+            # Skip ſ that already live inside a choice/orig|corr markup node.
+            parent_name = etree.QName(parent).localname
+            if parent_name in ("orig", "corr"):
+                continue
+            targets.append((parent, bool(textnode.is_text), str(textnode)))
+
+        for parent, is_text, raw in targets:
+            parts = self.tag_long_s(raw)
+            leading = ""
+            chunks: list[tuple[etree._Element, str]] = []
+            for part in parts:
+                if isinstance(part, str):
+                    if not chunks:
+                        leading += part
+                    else:
+                        el, tail = chunks[-1]
+                        chunks[-1] = (el, tail + part)
+                else:
+                    chunks.append((part, ""))
+
+            if is_text:
+                parent.text = leading or None
+                for i, (el, tail) in enumerate(chunks):
+                    el.tail = tail or None
+                    # Keep relative order in front of any already existing children.
+                    parent.insert(i, el)
+            else:
+                # `parent` owns the tail being rewritten.
+                parent.tail = leading or None
+                last = parent
+                for el, tail in chunks:
+                    el.tail = tail or None
+                    last.addnext(el)
+                    last = el
 
     def to_tei(self):
         vers_elem = tei("l")
