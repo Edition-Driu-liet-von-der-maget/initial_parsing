@@ -10,7 +10,7 @@
          </titleStmt>
          <publicationStmt>
             <p>Publication Information</p>
-         </publicationStmt>
+         <availability><p type="image_copyright">Bereitgestellt von: Österreichische Nationalbibliothek</p></availability></publicationStmt>
             <sourceDesc>
                <msDesc xml:id="A"><msIdentifier><country>Österreich</country><settlement>Wien</settlement><repository>Österreichische Nationalbibliothek</repository><idno type="siglum">A</idno><idno type="signature">Cod. 2742*</idno><idno type="handschriftencensus_id">1229</idno><idno type="handschriftencensus_url">https://www.handschriftencensus.de/1229</idno></msIdentifier><msContents><summary>Priester Wernher: 'Driu liet von der maget' (A) ; Konrad von Fußesbrunnen: 'Kindheit Jesu' (A) ; Lateinische Mariengebete mit deutschen Überschriften und Anweisungen (Nachtrag 14. Jh.)</summary><textLang>bairisch-österreichisch (Wesle S. LXXXI)</textLang></msContents><physDesc><objectDesc><supportDesc><support><material>Pergament</material><p type="extent">Bl. 9–102; vorgebunden 8 Bl. einer Handschrift des 14. Jh.s mit Nachträgen aus dem 15. Jh.</p><p type="leaf_size">160 x 110 mm</p><p type="writing_area">117 x 75 mm</p></support></supportDesc><layoutDesc><layout columns="1" writtenLines="22-26"><p type="lines_per_page">22–26</p><p type="verse_layout">Bl. 9r–10r, Z. 2: Verse abgesetzt; in der Folge Verse nicht abgesetzt</p></layout></layoutDesc></objectDesc></physDesc><history><origin><origDate>3. Viertel 13. Jh. (Schneider S. 176)</origDate><origPlace>Deutschordensniederlassung in Wien oder Wiener Neustadt? (vgl. Mitteleuropäische Schulen, Textbd. S. 20)</origPlace></origin></history></msDesc></sourceDesc>
       </fileDesc>

@@ -6,7 +6,11 @@ import re
 from pathlib import Path
 from lxml import etree
 from utils import resolve_path_relative_to_script
-from get_images_from_3if import get_info_json_urls, load_witnesses_json, get_manifest
+from get_images_from_3if import (
+    get_info_json_urls,
+    get_manifest_copyright_text,
+    load_manifest,
+)
 
 NS_TEI = "http://www.tei-c.org/ns/1.0"
 NS_XML = "http://www.w3.org/XML/1998/namespace"
@@ -255,6 +259,39 @@ def infer_siglum_from_file(tei_path: Path, root: etree._Element) -> str:
     return tei_path.stem
 
 
+def replace_image_copyright(root: etree._Element, copyright_text: str) -> bool:
+    publication_stmt = root.find(".//tei:teiHeader/tei:fileDesc/tei:publicationStmt", namespaces=NS)
+    if publication_stmt is None:
+        return False
+
+    for availability in publication_stmt.findall("tei:availability", namespaces=NS):
+        copyright_note = availability.find("tei:p[@type='image_copyright']", namespaces=NS)
+        if copyright_note is not None:
+            publication_stmt.remove(availability)
+
+    if not copyright_text:
+        return True
+
+    availability = tei_sub(publication_stmt, "availability")
+    copyright_note = tei_sub(availability, "p", {"type": "image_copyright"})
+    copyright_note.text = copyright_text
+    return True
+
+
+def replace_facsimile(root: etree._Element, facsimile: etree._Element | None) -> bool:
+    for existing_facsimile in root.findall("tei:facsimile", namespaces=NS):
+        root.remove(existing_facsimile)
+
+    if facsimile is None:
+        return True
+
+    tei_header = root.find("tei:teiHeader", namespaces=NS)
+    if tei_header is None:
+        return False
+    tei_header.addnext(facsimile)
+    return True
+
+
 def get_facsimile_element(urls: list[str], pb_elements: list[etree._Element]):
     facsimile = etree.Element(f"{{{NS_TEI}}}facsimile")
     for i, url in enumerate(urls, start=1):
@@ -294,18 +331,21 @@ def enrich_tei_files(
             continue
 
         replace_ms_desc(root, siglum, witness)
+        replace_image_copyright(root, "")
+        replace_facsimile(root, None)
 
         manifest_url = witness.get("IIIF_manifest", None)
         pb_elements = root.xpath(".//tei:pb", namespaces=NS)
         if manifest_url is not None:
-            manifest  = get_manifest(manifest_url)
+            manifest = load_manifest(manifest_url)
             urls = get_info_json_urls(
                 manifest,
                 witness["first_scan"],
                 witness["last_scan"],
             )
+            replace_image_copyright(root, get_manifest_copyright_text(manifest))
             facs_elem = get_facsimile_element(urls, pb_elements)
-            root.xpath(".//tei:teiHeader", namespaces=NS)[0].addnext(facs_elem)
+            replace_facsimile(root, facs_elem)
 
         
 
