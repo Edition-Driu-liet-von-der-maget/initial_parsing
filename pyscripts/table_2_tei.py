@@ -103,6 +103,62 @@ def tei_sub(parent, tag, attributes={}):
     return subel
 
 
+# Sentinel prefix for order-check errors written to the log.
+ORDER_CHECK_PREFIX = "ORDER-CHECK"
+
+
+def _element_text_reading(element: etree._Element) -> str:
+    """Concatenate an element's own text and its children (with tails) in document order."""
+    parts = [element.text or ""]
+    for child in element:
+        parts.append(canonical_reading(child))
+        parts.append(child.tail or "")
+    return "".join(parts)
+
+
+def canonical_reading(element: etree._Element) -> str:
+    """Return a stable, markup-aware reading of a TEI element tree.
+
+    Used to verify that `Vers.tag_long_s_in_vers` does not change the order or
+    content of a verse. The concrete side chosen inside <choice> is arbitrary —
+    it only has to be deterministic, because the check compares the *same* tree
+    before and after the long-s (ſ) tagging step, which is purely cosmetic and
+    therefore must not alter the reading. Bare ſ reads as "ſ", and the wrapper
+    <choice><orig>ſ</orig><corr>s</corr></choice> also reads as "ſ" via <orig>.
+    """
+    if element is None:
+        return ""
+    local = etree.QName(element).localname
+    if local in ("pb", "gap"):
+        return ""
+    if local == "choice":
+        for child_name in ("expan", "reg", "orig", "corr", "abbr"):
+            for child in element:
+                if etree.QName(child).localname == child_name:
+                    return canonical_reading(child)
+        return _element_text_reading(element)
+    return _element_text_reading(element)
+
+
+# Sentinel prefix for full-pipeline fidelity-check errors.
+FIDELITY_CHECK_PREFIX = "FIDELITY-CHECK"
+
+
+def xml_all_text(element: etree._Element) -> str:
+    """Concatenate every text/tail node of the element tree in document order.
+
+    Includes both sides of a <choice> (abbr+expan, orig+reg/corr), so the
+    result is a superset of the literal transcription reading.
+    """
+    return "".join(element.itertext())
+
+
+def is_subsequence(needle: str, haystack: str) -> bool:
+    """True if `needle` can be obtained by deleting characters from `haystack`."""
+    it = iter(haystack)
+    return all(char in it for char in needle)
+
+
 # Markup resolution
 
 
@@ -202,7 +258,7 @@ class MarkupResolver:
     @staticmethod
     def translate_to_tei(element: etree._Element, siglum: str = ""):
         macron = "\u0304"
-        unterlänge_strich = "\ua751"
+        p_unterlänger_strich = "\ua751"
         if element is None:
             return None
         tag_name = etree.QName(element).localname
@@ -272,7 +328,7 @@ class MarkupResolver:
                     return tei_choice
                 elif text in ["per", "par"]:
                     # p with stroke through descender (U+A751)
-                    abbr.text = "p" + unterlänge_strich
+                    abbr.text = p_unterlänger_strich
                 elif text == "rum":
                     # r + rotunda r (U+A75B), not a literal '+'
                     abbr.text = "r" + "\ua75b"
@@ -367,10 +423,15 @@ class MarkupResolver:
     @staticmethod
     def resolve_markup(container: etree._Element, markup_str: str, siglum: str):
         errors = []
+        expected: list[str] = []
         i = 0
         stack: list[etree._Element] = []
 
         def emit_text(char: str):
+            # Record the literal reading; page labels (#f) and et-ligature
+            # content (#&) are dropped by translate_to_tei, so exclude them.
+            if not stack or etree.QName(stack[-1]).localname not in ("pb", "et"):
+                expected.append(char)
             if not stack:
                 if len(container) == 0:
                     container.text = (container.text or "") + char
@@ -446,7 +507,7 @@ class MarkupResolver:
             errors.append("unclosed markup at end of verse")
             while stack:
                 close_current()
-        return errors
+        return errors, "".join(expected)
 
 
 class Vers:
@@ -535,8 +596,24 @@ class Vers:
             vers_elem.set(f"{{{NS['xml']}}}id", f"{self.vers_prefix}{self.local_count}")
         vers_elem.set("n", f"{self.vers_prefix}{self.global_count}")
         markup_str = self.text_str
-        errors = MarkupResolver.resolve_markup(vers_elem, markup_str, self.siglum)
+        errors, expected_reading = MarkupResolver.resolve_markup(
+            vers_elem, markup_str, self.siglum
+        )
+        reading_before = canonical_reading(vers_elem)
         self.tag_long_s_in_vers(vers_elem)
+        reading_after = canonical_reading(vers_elem)
+        if reading_before != reading_after:
+            errors.append(
+                f"{ORDER_CHECK_PREFIX}: long-s tagging changed the reading. "
+                f"before={reading_before!r} after={reading_after!r}"
+            )
+        expected_reading = "".join(c for c in expected_reading if not c.isspace())
+        actual_reading = "".join(c for c in xml_all_text(vers_elem) if not c.isspace())
+        if not is_subsequence(expected_reading, actual_reading):
+            errors.append(
+                f"{FIDELITY_CHECK_PREFIX}: verse text not found in order in the TEI. "
+                f"expected={expected_reading!r} actual={actual_reading!r}"
+            )
         return vers_elem, errors
 
 
@@ -550,6 +627,8 @@ class Witness:
         self.body = None
         self.container = None
         self.local_verses = 0
+        self.order_check_failures = 0
+        self.fidelity_check_failures = 0
         self.load_template()
         self.add_title()
         self.add_siglum_to_header()
@@ -619,6 +698,10 @@ class Witness:
             vers_elem, errors = verse.to_tei()
             for err in errors:
                 log_markup_issue(Path(LOG_FILE), self.siglum, verse, err)
+                if err.startswith(ORDER_CHECK_PREFIX):
+                    self.order_check_failures += 1
+                elif err.startswith(FIDELITY_CHECK_PREFIX):
+                    self.fidelity_check_failures += 1
             self.container.append(vers_elem)
 
     def append_vers_str(self, vers: str):
@@ -696,6 +779,26 @@ def csv_to_tei(csv_file_path: str):
         witness.add_structure()
         witness.set_filename()
         witness.save_to_file()
+    order_check_failures = sum(
+        witness.order_check_failures for witness in witnesses.values()
+    )
+    if order_check_failures:
+        print(
+            f"WARNING: {order_check_failures} verse(s) changed their reading during "
+            f"long-s tagging. See {resolve_path_relative_to_script(LOG_FILE)}."
+        )
+    else:
+        print("Order check passed: long-s tagging preserved every verse's reading.")
+    fidelity_check_failures = sum(
+        witness.fidelity_check_failures for witness in witnesses.values()
+    )
+    if fidelity_check_failures:
+        print(
+            f"WARNING: {fidelity_check_failures} verse(s) failed the full-pipeline "
+            f"fidelity check. See {resolve_path_relative_to_script(LOG_FILE)}."
+        )
+    else:
+        print("Fidelity check passed: every verse's reading was preserved in order.")
 
 
 if __name__ == "__main__":
